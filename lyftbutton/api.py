@@ -22,8 +22,7 @@ def get_lyft_account(auth_context=None):
         auth_context (str): Authentication context provided by authorizer.
 
     Returns:
-        (:class:`lyftbutton.models.LyftAccount`) If the user is authenticated,
-        the Lyft account.
+        (:class:`LyftAccount`) If the user is authenticated, the Lyft account.
     """
     CLIENT_ID = os.environ.get('LYFT_CLIENT_ID')
     CLIENT_SECRET = os.environ.get('LYFT_CLIENT_SECRET')
@@ -52,10 +51,10 @@ def create_lyft_account(lyft_auth, auth_context, button_id=None):
     Register a new Lyft account for the authenticated user
 
     Args:
-        lyft_auth (:class:`lyftbutton.models.LyftAuth`) Lyft postback info.
+        lyft_auth (:class:`LyftAuth`) Lyft postback info.
 
     Returns:
-        (:class:`lyftbutton.models.LyftAccount`) The Lyft account.
+        (:class:`LyftAccount`) The Lyft account.
     """
     CLIENT_ID = os.environ.get('LYFT_CLIENT_ID')
     CLIENT_SECRET = os.environ.get('LYFT_CLIENT_SECRET')
