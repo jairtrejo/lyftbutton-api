@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Lyft Button API - The API for lyftbutton.com'
+
+Parameters:
+  LYFT_CLIENT_ID:
+    Type: String
+    Description: Lyft API Client ID
+  LYFT_CLIENT_SECRET:
+    Type: String
+    Description: Lyft API Client Secret
+
+Globals:
+  Function:
+    Timeout: 5
+    Environment:
+      Variables:
+        LYFT_CLIENT_ID: !Ref LYFT_CLIENT_ID
+        LYFT_CLIENT_SECRET: !Ref LYFT_CLIENT_SECRET
+
+Resources:
+  GetLyftAccountFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.get_lyft_account
+      Runtime: python3.6
+      Events:
+          GetLyftAccount:
+              Type: Api
+              Properties:
+                  Path: /lyft-account
+                  Method: get

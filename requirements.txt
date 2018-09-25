@@ -1,0 +1,4 @@
+aws-sam-cli
+lyft-rides==0.2
+pytest==3.8
+attrs==18.2.0
