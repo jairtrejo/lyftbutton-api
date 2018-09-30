@@ -1,4 +1,7 @@
-aws-sam-cli
-lyft-rides==0.2
-pytest==3.8
 attrs==18.2.0
+aws-sam-cli==0.6.0
+boto3==1.9.3
+flake8==3.5.0
+lyft-rides==0.2
+pyjwt==1.6.4
+pytest==3.8

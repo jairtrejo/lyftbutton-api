@@ -3,6 +3,13 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: 'Lyft Button API - The API for lyftbutton.com'
 
 Parameters:
+  TOKEN_SECRET:
+    Type: String
+    Description: Secret key to sign tokens
+  DYNAMO_ENDPOINT:
+    Type: String
+    Description: Optional custom dynamo endpoint
+    Default: ''
   LYFT_CLIENT_ID:
     Type: String
     Description: Lyft API Client ID
@@ -12,13 +19,23 @@ Parameters:
 
 Globals:
   Function:
-    Timeout: 5
+    Timeout: 300
     Environment:
       Variables:
+        TOKEN_SECRET: !Ref TOKEN_SECRET
+        DYNAMO_ENDPOINT: !Ref DYNAMO_ENDPOINT
         LYFT_CLIENT_ID: !Ref LYFT_CLIENT_ID
         LYFT_CLIENT_SECRET: !Ref LYFT_CLIENT_SECRET
 
 Resources:
+  ButtonOfLyft:
+    Type: 'AWS::Serverless::SimpleTable'
+    Properties:
+      TableName: Token
+      PrimaryKey:
+        Name: lyft_id
+        Type: String
+
   GetLyftAccountFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -31,3 +48,16 @@ Resources:
               Properties:
                   Path: /lyft-account
                   Method: get
+
+  CreateLyftAccountFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.create_lyft_account
+      Runtime: python3.6
+      Events:
+          GetLyftAccount:
+              Type: Api
+              Properties:
+                  Path: /lyft-account
+                  Method: post

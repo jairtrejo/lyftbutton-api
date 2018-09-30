@@ -1,7 +1,9 @@
 import json
+import os
 from functools import wraps
 
 import attr
+import jwt
 
 
 @attr.s
@@ -18,10 +20,39 @@ class Response:
         return self
 
     def asdict(self):
-        return {
+        response = {
             'statusCode': self.status_code,
-            **{'body': self.body, 'headers': self.headers}
         }
+        if self.body is not None:
+            response['body'] = self.body
+        if len(self.headers) != 0:
+            response['headers'] = self.headers
+
+        return response
+
+
+def authorizer(event, context):
+    """
+    An API Gateway authorizer
+
+    Args:
+        event (dict) The authorization event
+        context (dict) Lambda execution context
+
+    Returns:
+        response (dict) An auth_context dictionary
+    """
+    TOKEN_SECRET = os.environ.get('TOKEN_SECRET')
+    auth_header = event['headers'].get('Authorization')
+
+    if auth_header:
+        claims = jwt.decode(
+            auth_header.split(' ')[1], TOKEN_SECRET, algorithm='HS256')
+        claims['principalId'] = 'button'
+    else:
+        claims = {'principalId': 'anonymous'}
+
+    return claims
 
 
 def api_handler(*args, model=None):
@@ -42,7 +73,14 @@ def api_handler(*args, model=None):
         @wraps(f)
         def api_method(event, context):
             parameters = event.get('queryStringParameters', {}) or {}
-            auth_context = context.get('authorizer', None)
+            # auth_context = event.get(
+                # 'requestContext', {}
+            # ).get('authorizer', None)
+            auth_context = authorizer(event, context)
+
+            print("========== DEBUG ===========")
+            print(event.get('headers'))
+            print('Auth context: ', auth_context)
 
             if auth_context and auth_context['principalId'] != 'anonymous':
                 parameters['auth_context'] = auth_context
@@ -55,14 +93,16 @@ def api_handler(*args, model=None):
                     response = f(**parameters)
             except TypeError as e:
                 print(e)
-                return {
-                    'statusCode': 400
-                }
+                response = Response(
+                    status_code=400, body=json.dumps({'message': str(e)}))
 
             if not isinstance(response, Response):
                 response = Response(
                     status_code=200,
                     body=json.dumps(attr.asdict(response)))
+
+            print(response)
+            print("============================")
 
             return response.asdict()
 

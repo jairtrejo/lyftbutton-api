@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='lyftbutton',
@@ -8,9 +8,10 @@ setup(
     author='Jair Trejo',
     author_email='jair@jairtrejo.mx',
     license='MIT',
-    packages=['lyftbutton'],
+    packages=find_packages(),
     install_requires=[
         'lyft-rides==0.2',
-        'attrs==18.2'
+        'attrs==18.2',
+        'pyjwt==1.6.4'
     ],
     zip_safe=False)

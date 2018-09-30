@@ -3,7 +3,7 @@ import json
 import attr
 import pytest
 
-from lyftbutton.lambdautils import api_handler, Response
+from lyftbutton.utils.lambdafn import api_handler, Response
 
 
 @pytest.fixture
@@ -73,7 +73,9 @@ class TestApiHandler:
         def handler(auth_context):
             return Response(status_code=200, body=auth_context['principalId'])
 
-        context['authorizer'] = {'principalId': 'some-id'}
+        event['requestContext'] = {
+            'authorizer': {'principalId': 'some-id'}
+        }
 
         response = handler(event, context)
 
@@ -84,11 +86,13 @@ class TestApiHandler:
         def handler(auth_context=None):
             return Response(status_code=200, body=auth_context)
 
-        context['authorizer'] = {'principalId': 'anonymous'}
+        event['requestContext'] = {
+            'authorizer': {'principalId': 'anonymous'}
+        }
 
         response = handler(event, context)
 
-        assert response['body'] is None
+        assert response.get('body') is None
 
     def test_builds_model_if_requested(self, event, context):
         MyModel = attr.make_class('MyModel', ['foo'])
