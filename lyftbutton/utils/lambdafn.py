@@ -73,10 +73,12 @@ def api_handler(*args, model=None):
         @wraps(f)
         def api_method(event, context):
             parameters = event.get('queryStringParameters', {}) or {}
-            # auth_context = event.get(
-                # 'requestContext', {}
-            # ).get('authorizer', None)
-            auth_context = authorizer(event, context)
+            if os.getenv('AWS_SAM_LOCAL'):
+                auth_context = authorizer(event, context)
+            else:
+                auth_context = event.get(
+                    'requestContext', {}
+                ).get('authorizer', None)
 
             print("========== DEBUG ===========")
             print(event.get('headers'))

@@ -3,11 +3,10 @@ import os
 import boto3
 
 
-DYNAMO_ENDPOINT = os.environ.get('DYNAMO_ENDPOINT')
+LOCAL_DYNAMO_ENDPOINT = "http://docker.for.mac.localhost:8000/"
 
 
-if DYNAMO_ENDPOINT:
-    print('Using custom endpoint: %s' % DYNAMO_ENDPOINT)
-    dynamodb = boto3.resource('dynamodb', endpoint_url=DYNAMO_ENDPOINT)
+if os.getenv('AWS_SAM_LOCAL'):
+    dynamodb = boto3.resource('dynamodb', endpoint_url=LOCAL_DYNAMO_ENDPOINT)
 else:
     dynamodb = boto3.resource('dynamodb')
