@@ -119,3 +119,13 @@ class TestApiHandler:
         response = handler(event, context)
 
         assert response['statusCode'] == 400
+
+    def test_returns_404_when_response_is_none(self, event, context):
+        @api_handler
+        def handler():
+            return None
+
+        response = handler(event, context)
+
+        print(response)
+        assert response['statusCode'] == 404

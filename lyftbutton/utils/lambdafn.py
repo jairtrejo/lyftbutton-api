@@ -73,8 +73,8 @@ def api_handler(*args, model=None):
         @wraps(f)
         def api_method(event, context):
             print("========== DEBUG ===========")
-            print(event.get('headers'))
-            print(event.get('queryStringParameters'))
+            print('Headers:', event.get('headers'))
+            print('Query string:', event.get('queryStringParameters'))
             parameters = event.get('queryStringParameters', {}) or {}
             if os.getenv('AWS_SAM_LOCAL'):
                 auth_context = authorizer(event, context)
@@ -99,7 +99,9 @@ def api_handler(*args, model=None):
                 response = Response(
                     status_code=400, body=json.dumps({'message': str(e)}))
 
-            if not isinstance(response, Response):
+            if not response:
+                response = Response(status_code=404)
+            elif not isinstance(response, Response):
                 response = Response(
                     status_code=200,
                     body=json.dumps(attr.asdict(response)))
