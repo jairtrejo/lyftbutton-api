@@ -1,38 +1,16 @@
-import pytest
+import attr
 import lyft_rides.errors
-from lyft_rides.session import Session
+import pytest
 
-from lyftbutton.models import LyftAuth
-
-
-class FakeLyftResponse:
-    def __init__(self):
-        self.json = {
-            'id': 'some-id',
-            'first_name': 'Harry',
-            'last_name': 'Potter',
-            'has_taken_a_ride': True
-        }
+from lyftbutton.lyft import LyftAuth, LyftAccount
 
 
-def make_fake_token(button_id):
-    class Token:
-        def __init__(self, lyft_account):
-            self.button_id = button_id
+@attr.s
+class DashButton:
+    serial_number = attr.ib()
 
-        @property
-        def jwt(self):
-            return 'token:%s' % self.button_id
-
-    return Token
-
-
-def make_fake_credentials(lyft):
-    class Credentials:
-        def __init__(self, lyft_account):
-            self.lyft = lyft
-
-    return Credentials
+    def find(self):
+        raise NotImplementedError
 
 
 @pytest.fixture
@@ -52,9 +30,22 @@ def jwt(monkeypatch):
 
 @pytest.fixture
 def known_button_id(monkeypatch):
+    print("Patching")
     button_id = 'known-button-id'
+    button = DashButton(serial_number=button_id)
+    lyft_account = LyftAccount(
+        id=456,
+        first_name='Jair',
+        last_name='Trejo',
+        has_taken_a_ride=True)
+    button.lyft_account = lyft_account
+
     monkeypatch.setattr(
-        'lyftbutton.api.lyftaccount.Credentials', make_fake_credentials('xyz'))
+        DashButton, 'find',
+        lambda button_id=None, lyft_id=None: button)
+    monkeypatch.setattr('lyftbutton.api.lyftaccount.DashButton', DashButton)
+    monkeypatch.setattr('lyftbutton.api.dashbutton.DashButton', DashButton)
+
     return button_id
 
 
@@ -62,49 +53,65 @@ def known_button_id(monkeypatch):
 def unknown_button_id(monkeypatch):
     button_id = 'unknown-button-id'
     monkeypatch.setattr(
-        'lyftbutton.api.lyftaccount.Credentials', make_fake_credentials(None))
+        DashButton, 'find',
+        lambda button_id=None, lyft_id=None: None)
+    monkeypatch.setattr('lyftbutton.api.lyftaccount.DashButton', DashButton)
+    monkeypatch.setattr('lyftbutton.api.dashbutton.DashButton', DashButton)
     return button_id
 
 
 @pytest.fixture
-def known_lyft_auth(monkeypatch, jwt):
-    monkeypatch.setattr(
-        'lyft_rides.auth.AuthorizationCodeGrant.get_session',
-        lambda self, url: Session('credentials'))
+def known_lyft_auth(monkeypatch):
+    button_id = 'known-button-id'
+    button = DashButton(serial_number=button_id)
+    lyft_account = LyftAccount(
+        id=123,
+        first_name='Jair',
+        last_name='Trejo',
+        has_taken_a_ride=True)
+    button.lyft_account = lyft_account
 
     monkeypatch.setattr(
-        'lyft_rides.client.LyftRidesClient.get_user_profile',
-        lambda _: FakeLyftResponse())
-
+        'lyftbutton.lyft.LyftAuth.lyft_account', lyft_account)
     monkeypatch.setattr(
-        'lyftbutton.api.lyftaccount.Token', make_fake_token('known-button-id'))
+        DashButton, 'find',
+        lambda button_id=None, lyft_id=None: button)
+    monkeypatch.setattr('lyftbutton.api.lyftaccount.DashButton', DashButton)
+    monkeypatch.setattr('lyftbutton.api.dashbutton.DashButton', DashButton)
 
     return LyftAuth(state='123', code='known')
 
 
 @pytest.fixture
-def unknown_lyft_auth(monkeypatch, jwt):
+def unknown_lyft_auth(monkeypatch):
     monkeypatch.setattr(
-        'lyft_rides.auth.AuthorizationCodeGrant.get_session',
-        lambda self, url: Session('credentials'))
-
+        'lyftbutton.lyft.LyftAuth.lyft_account',
+        LyftAccount(
+            id=123,
+            first_name='Jair',
+            last_name='Trejo',
+            has_taken_a_ride=True))
+    find = DashButton.find
     monkeypatch.setattr(
-        'lyft_rides.client.LyftRidesClient.get_user_profile',
-        lambda _: FakeLyftResponse())
+        DashButton, 'find',
+        lambda button_id=None, lyft_id=None:
+            None if lyft_id else find(button_id=button_id))
+    monkeypatch.setattr('lyftbutton.api.lyftaccount.DashButton', DashButton)
+    monkeypatch.setattr('lyftbutton.api.dashbutton.DashButton', DashButton)
 
-    monkeypatch.setattr(
-        'lyftbutton.api.lyftaccount.Token', make_fake_token(None))
-
-    return LyftAuth(state='123', code='unknown')
+    return LyftAuth(state='123', code='known')
 
 
 @pytest.fixture
 def invalid_lyft_auth(monkeypatch):
-    def fail_get_session(self, url):
-        raise lyft_rides.errors.APIError("API error")
+    class LyftAuth:
+        def __init__(self, state, code):
+            pass
 
-    monkeypatch.setattr(
-        'lyft_rides.auth.AuthorizationCodeGrant.get_session',
-        fail_get_session)
+        @property
+        def lyft_account(self):
+            raise lyft_rides.errors.APIError("API error")
+
+    monkeypatch.setattr('lyftbutton.api.lyftaccount.LyftAuth', LyftAuth)
 
     return LyftAuth(state="unknown", code="invalid")

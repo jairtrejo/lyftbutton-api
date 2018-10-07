@@ -4,7 +4,7 @@ import pytest
 
 from lyftbutton.api import create_lyft_account, get_lyft_account
 from lyftbutton.utils.lambdafn import Response
-from lyftbutton.models import LyftAccount
+from lyftbutton.lyft import LyftAccount
 
 
 @pytest.mark.usefixtures("environment")
@@ -22,14 +22,14 @@ class TestGetLyftAccount:
         assert type(response) is LyftAccount
 
 
-@pytest.mark.usefixtures("environment")
+@pytest.mark.usefixtures("environment", "jwt")
 class TestCreateLyftAccount:
     def test_login_with_an_existing_button(
         self, known_lyft_auth, known_button_id
     ):
         response = create_lyft_account.__wrapped__(known_lyft_auth)
 
-        assert response.status_code == 202
+        assert response.status_code == 200
         assert response.headers['Set-Cookie'] == 'Token=token:known-button-id'
 
     def test_login_with_a_new_button(
@@ -43,7 +43,7 @@ class TestCreateLyftAccount:
         assert response.headers['Set-Cookie'] == 'Token=token:unknown-button-id'
 
     def test_change_lyft_account_for_logged_in_button(
-        self, unknown_lyft_auth, known_lyft_auth, known_button_id
+        self, unknown_lyft_auth, known_button_id
     ):
         response = create_lyft_account.__wrapped__(
             unknown_lyft_auth,
@@ -51,14 +51,14 @@ class TestCreateLyftAccount:
             auth_context={'button_id': known_button_id})
 
         assert response.status_code == 200
-        assert response.headers['Set-Cookie'] == 'Token=token:known-button-id'
+        assert 'id' in json.loads(response.body)
 
     def test_login_with_an_invalid_state_or_code(self, invalid_lyft_auth):
         response = create_lyft_account.__wrapped__(invalid_lyft_auth)
         assert response.status_code == 403
 
-    def test_login_with_a_button_that_belongs_to_someone_else(
-        self, unknown_lyft_auth, known_lyft_auth, known_button_id
+    def test_claim_a_button_that_belongs_to_someone_else(
+        self, known_button_id, unknown_lyft_auth
     ):
         response = create_lyft_account.__wrapped__(
             unknown_lyft_auth,

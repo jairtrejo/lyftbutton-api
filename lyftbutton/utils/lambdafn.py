@@ -72,6 +72,9 @@ def api_handler(*args, model=None):
         """
         @wraps(f)
         def api_method(event, context):
+            print("========== DEBUG ===========")
+            print(event.get('headers'))
+            print(event.get('queryStringParameters'))
             parameters = event.get('queryStringParameters', {}) or {}
             if os.getenv('AWS_SAM_LOCAL'):
                 auth_context = authorizer(event, context)
@@ -80,8 +83,6 @@ def api_handler(*args, model=None):
                     'requestContext', {}
                 ).get('authorizer', None)
 
-            print("========== DEBUG ===========")
-            print(event.get('headers'))
             print('Auth context: ', auth_context)
 
             if auth_context and auth_context['principalId'] != 'anonymous':

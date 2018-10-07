@@ -16,24 +16,29 @@ class Token:
         row = table.get_item(Key={'lyft_id': self.lyft_account.id})
         claims = row.get('Item', {})
 
-        if claims:
-            claims.pop('lyft_id')
+        claims.pop('lyft_id', None)
 
-        print("Reading from dynamo", claims)
+        return claims
 
-        return claims.get('button_id', None)
-
-    def _to_dynamo(self, button_id):
+    def _to_dynamo(self, claims):
         table = dynamodb.Table('Token')
 
+        claims['lyft_id'] = self.lyft_account.id
+
+        table.put_item(Item=claims)
+
+    def get_button_id(self):
+        if not self._button_id:
+            claims = self._from_dynamo()
+            self._button_id = claims.get('button_id', None)
+
+        return self._button_id
+
+    def set_button_id(self, button_id):
         claims = {
             'button_id': button_id
         }
-        claims['lyft_id'] = self.lyft_account.id
-
-        print("Writing to dynamo", claims)
-
-        table.put_item(Item=claims)
+        self._to_dynamo(claims)
 
     button_id = property(_from_dynamo, _to_dynamo)
 

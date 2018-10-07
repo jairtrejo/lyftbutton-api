@@ -12,6 +12,7 @@ setup(
     install_requires=[
         'lyft-rides==0.2',
         'attrs==18.2',
-        'pyjwt==1.6.4'
+        'pyjwt==1.6.4',
+        'structlog==18.2.0'
     ],
     zip_safe=False)
