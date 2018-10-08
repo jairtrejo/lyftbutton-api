@@ -4,13 +4,9 @@ import os
 import attr
 import jwt
 import lyft_rides.errors
-from lyft_rides.auth import AuthorizationCodeGrant
-from lyft_rides.client import LyftRidesClient
 
-from lyftbutton.credentials import Credentials
 from lyftbutton.utils.lambdafn import api_handler, Response
-from lyftbutton.tokens import Token
-from lyftbutton.lyft import LyftAuth, LyftAccount
+from lyftbutton.lyft import LyftAuth
 from lyftbutton.dashbutton import DashButton
 
 
@@ -35,7 +31,7 @@ def get_lyft_account(auth_context=None):
             body=json.dumps({'url': LyftAuth.get_url()}))
 
     btn = DashButton.find(button_id=auth_context['button_id'])
-    return btn.lyft_account
+    return getattr(btn, 'lyft_account', None)
 
 
 @api_handler(model=LyftAuth)
@@ -60,25 +56,29 @@ def create_lyft_account(lyft_auth, button_id=None, auth_context=None):
 
     if auth_context:
         btn = DashButton.find(button_id=auth_context['button_id'])
-
+        print("Authed: ", btn)
     elif button_id and not DashButton.find(button_id=button_id):
         btn = DashButton(serial_number=button_id)
-
+        print("Claimed: ", btn)
     else:
         btn = DashButton.find(lyft_id=lyft_account.id)
+        print("From Lyft: ", btn)
 
     if btn:
         btn.lyft_account = lyft_account
 
-        response = Response(
-            status_code=200, body=json.dumps(attr.asdict(lyft_account))
-        )
+        body = json.dumps(attr.asdict(
+            lyft_account,
+            filter=lambda attr, value: attr.name != "credentials"))
+
+        response = Response(status_code=200, body=body)
 
         if not auth_context:
             TOKEN_SECRET = os.environ.get('TOKEN_SECRET')
             token = jwt.encode(
                 {'button_id': btn.serial_number},
-                secret=TOKEN_SECRET, algorithm='HS256'
+                TOKEN_SECRET,
+                algorithm='HS256'
             ).decode('utf-8')
 
             response = response.set_cookie('Token', token)

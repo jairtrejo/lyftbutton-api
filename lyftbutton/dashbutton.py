@@ -11,23 +11,20 @@ def _from_dynamo(serial_number=None, lyft_id=None):
     table = dynamodb.Table('LyftButton')
 
     if not serial_number:
-        items = dynamodb.query(
-            TableName='LyftButton',
+        items = table.query(
             IndexName='lyft_id',
+            KeyConditionExpression='lyft_id = :lyft_id',
             ExpressionAttributeValues={
-                ':lyft_id': {
-                    'S': lyft_id
-                }
-            },
-            KeyConditionExpression='lyft_id = :lyft_id'
+                ':lyft_id': lyft_id
+            }
         ).get('Items')
-        serial_number = items[0]['serial_number']
+        if items:
+            serial_number = items[0]['serial_number']
+        else:
+            return None
 
     row = table.get_item(Key={'serial_number': serial_number})
     button_data = row.get('Item', None)
-
-    if button_data:
-        button_data.pop('serial_number')
 
     return button_data
 
@@ -77,6 +74,8 @@ class DashButton:
         return lyft_account
 
     def _set_lyft_account(self, lyft_account):
+        to_dynamo(
+            self.serial_number, 'lyft_id', lyft_account.id)
         to_dynamo(
             self.serial_number, 'lyft_credentials', lyft_account.credentials)
 

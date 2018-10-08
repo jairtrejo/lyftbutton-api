@@ -3,7 +3,7 @@ import os
 import attr
 from lyft_rides.auth import AuthorizationCodeGrant
 from lyft_rides.client import LyftRidesClient
-from lyft_rides.session import Session
+from lyft_rides.session import OAuth2Credential, Session
 
 
 def _get_auth_flow():
@@ -24,12 +24,16 @@ class LyftAccount:
     first_name = attr.ib()
     last_name = attr.ib()
     has_taken_a_ride = attr.ib()
+    credentials = attr.ib(default=None)
 
     @classmethod
-    def from_credentials(cls, oauth2credential):
+    def from_credentials(cls, credential_data):
+        oauth2credential = OAuth2Credential(**credential_data)
         session = Session(oauth2credential)
         client = LyftRidesClient(session)
-        return LyftAccount(**client.get_user_profile().json)
+
+        return cls(
+            **client.get_user_profile().json, credentials=credential_data)
 
 
 @attr.s
@@ -43,7 +47,19 @@ class LyftAuth:
         url = 'url?code={code}&state={state}'.format(
             code=self.code, state=self.state)
         session = auth_flow.get_session(url)
-        return LyftAccount.from_credentials(session.oauth2credential)
+
+        credentials = session.oauth2credential
+        credential_data = {
+            'client_id': credentials.client_id,
+            'access_token': credentials.access_token,
+            'expires_in_seconds': credentials.expires_in_seconds,
+            'scopes': list(credentials.scopes),
+            'grant_type': credentials.grant_type,
+            'client_secret': credentials.client_secret,
+            'refresh_token': credentials.refresh_token,
+        }
+
+        return LyftAccount.from_credentials(credential_data)
 
     @classmethod
     def get_url(self):
