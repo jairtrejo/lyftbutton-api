@@ -102,10 +102,7 @@ def api_handler(*args, model=None):
             if not response:
                 response = Response(status_code=404)
             elif not isinstance(response, Response):
-                body = json.dumps(attr.asdict(
-                    response,
-                    filter=lambda attr, value: attr.name != 'credentials'
-                ))
+                body = json.dumps(response.asdict())
                 response = Response(status_code=200, body=body)
 
             print(response)

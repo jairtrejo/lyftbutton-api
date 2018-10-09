@@ -80,3 +80,7 @@ class DashButton:
             self.serial_number, 'lyft_credentials', lyft_account.credentials)
 
     lyft_account = property(_get_lyft_account, _set_lyft_account)
+
+    def asdict(self):
+        d = attr.asdict(self)
+        return d

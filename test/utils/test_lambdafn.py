@@ -19,7 +19,10 @@ def context():
 @pytest.fixture
 def model_instance():
     def _model_instance(**kwargs):
-        C = attr.make_class('MyModel', list(kwargs.keys()))
+        class S:
+            def asdict(self):
+                return attr.asdict(self)
+        C = attr.make_class('MyModel', list(kwargs.keys()), bases=(S,))
         return C(**kwargs)
 
     return _model_instance

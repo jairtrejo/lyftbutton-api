@@ -64,9 +64,7 @@ def create_lyft_account(lyft_auth, button_id=None, auth_context=None):
     if btn:
         btn.lyft_account = lyft_account
 
-        body = json.dumps(attr.asdict(
-            lyft_account,
-            filter=lambda attr, value: attr.name != "credentials"))
+        body = json.dumps(lyft_account.asdict())
 
         response = Response(status_code=200, body=body)
 

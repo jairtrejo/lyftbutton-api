@@ -35,6 +35,10 @@ class LyftAccount:
         return cls(
             **client.get_user_profile().json, credentials=credential_data)
 
+    def asdict(self):
+        return attr.asdict(
+            self, filter=lambda attr, value: attr.name != 'credentials')
+
 
 @attr.s
 class LyftAuth:
