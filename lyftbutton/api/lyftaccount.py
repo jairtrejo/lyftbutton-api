@@ -56,13 +56,10 @@ def create_lyft_account(lyft_auth, button_id=None, auth_context=None):
 
     if auth_context:
         btn = DashButton.find(button_id=auth_context['button_id'])
-        print("Authed: ", btn)
     elif button_id and not DashButton.find(button_id=button_id):
         btn = DashButton(serial_number=button_id)
-        print("Claimed: ", btn)
     else:
         btn = DashButton.find(lyft_id=lyft_account.id)
-        print("From Lyft: ", btn)
 
     if btn:
         btn.lyft_account = lyft_account
