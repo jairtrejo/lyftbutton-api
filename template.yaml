@@ -6,10 +6,6 @@ Parameters:
   TOKEN_SECRET:
     Type: String
     Description: Secret key to sign tokens
-  DYNAMO_ENDPOINT:
-    Type: String
-    Description: Optional custom dynamo endpoint
-    Default: ''
   LYFT_CLIENT_ID:
     Type: String
     Description: Lyft API Client ID
@@ -43,11 +39,11 @@ Resources:
       Handler: lyftbutton.get_lyft_account
       Runtime: python3.6
       Events:
-          GetLyftAccount:
-              Type: Api
-              Properties:
-                  Path: /lyft-account
-                  Method: get
+        GetLyftAccount:
+          Type: Api
+          Properties:
+            Path: /lyft-account
+            Method: get
 
   CreateLyftAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -56,8 +52,47 @@ Resources:
       Handler: lyftbutton.create_lyft_account
       Runtime: python3.6
       Events:
-          GetLyftAccount:
-              Type: Api
-              Properties:
-                  Path: /lyft-account
-                  Method: post
+        CreateLyftAccount:
+          Type: Api
+          Properties:
+            Path: /lyft-account
+            Method: post
+
+  GetDashButtonFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.get_dash_button
+      Runtime: python3.6
+      Events:
+        GetDashButton:
+          Type: Api
+          Properties:
+            Path: /dash-button
+            Method: get
+
+  SetDashButtonHomeFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.set_dash_button_home
+      Runtime: python3.6
+      Events:
+        SetDashButtonHome:
+          Type: Api
+          Properties:
+            Path: /dash-button/home
+            Method: post
+
+  SetDashButtonDestinationFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.set_dash_button_default_destination
+      Runtime: python3.6
+      Events:
+        SetDashButtonDestination:
+          Type: Api
+          Properties:
+            Path: /dash-button/destination
+            Method: post

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from functools import lru_cache
 
 import attr
@@ -29,7 +30,7 @@ def _from_dynamo(serial_number=None, lyft_id=None):
     return button_data
 
 
-def to_dynamo(serial_number, field, value):
+def _to_dynamo(serial_number, field, value):
     table = dynamodb.Table('LyftButton')
 
     table.update_item(
@@ -51,8 +52,6 @@ class Location:
 
 @attr.s
 class DashButton:
-    serial_number = attr.ib()
-
     @classmethod
     def find(cls, button_id=None, lyft_id=None):
         button_data = _from_dynamo(
@@ -68,19 +67,54 @@ class DashButton:
         lyft_account = LyftAccount.from_credentials(
             button_data['lyft_credentials'])
         # Refresh credentials
-        to_dynamo(
+        _to_dynamo(
             self.serial_number, 'lyft_credentials', lyft_account.credentials)
 
         return lyft_account
 
     def _set_lyft_account(self, lyft_account):
-        to_dynamo(
+        _to_dynamo(
             self.serial_number, 'lyft_id', lyft_account.id)
-        to_dynamo(
+        _to_dynamo(
             self.serial_number, 'lyft_credentials', lyft_account.credentials)
 
+    def _get_location(self, field):
+        button_data = _from_dynamo(self.serial_number)
+        location_data = button_data.get(field, None)
+        if location_data:
+            location_data = {
+                k: float(v)
+                for k, v in location_data.items()
+            }
+        return Location(**location_data) if location_data else None
+
+    def _set_location(self, field, location):
+        location_data = {
+            k: Decimal('%.4f' % v)
+            for k, v in attr.asdict(location).items()
+        }
+        _to_dynamo(self.serial_number, field, location_data)
+
+    def get_home(self):
+        return self._get_location(field='home')
+
+    def set_home(self, location):
+        self._set_location(field='home', location=location)
+
+    def get_destination(self):
+        return self._get_location(field='destination')
+
+    def set_destination(self, location):
+        self._set_location(field='destination', location=location)
+
+    serial_number = attr.ib()
     lyft_account = property(_get_lyft_account, _set_lyft_account)
+    home = property(get_home, set_home)
+    destination = property(get_destination, set_destination)
 
     def asdict(self):
+        _from_dynamo.cache_clear()
         d = attr.asdict(self)
+        d['home'] = self.home and attr.asdict(self.home)
+        d['destination'] = self.destination and attr.asdict(self.destination)
         return d

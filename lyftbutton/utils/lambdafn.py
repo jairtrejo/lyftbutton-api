@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from functools import wraps
 
 import attr
@@ -95,7 +96,7 @@ def api_handler(*args, model=None):
                 else:
                     response = f(**parameters)
             except TypeError as e:
-                print(e)
+                traceback.print_exc()
                 response = Response(
                     status_code=400, body=json.dumps({'message': str(e)}))
 
