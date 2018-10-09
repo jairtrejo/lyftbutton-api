@@ -30,7 +30,6 @@ def jwt(monkeypatch):
 
 @pytest.fixture
 def known_button_id(monkeypatch):
-    print("Patching")
     button_id = 'known-button-id'
     button = DashButton(serial_number=button_id)
     lyft_account = LyftAccount(

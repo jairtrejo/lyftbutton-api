@@ -1,7 +1,6 @@
 import json
 import os
 
-import attr
 import jwt
 import lyft_rides.errors
 

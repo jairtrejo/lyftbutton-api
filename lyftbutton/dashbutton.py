@@ -64,8 +64,9 @@ class DashButton:
 
     def _get_lyft_account(self):
         button_data = _from_dynamo(self.serial_number)
-        lyft_account = LyftAccount.from_credentials(
-            button_data['lyft_credentials'])
+        credentials = button_data['lyft_credentials']
+
+        lyft_account = LyftAccount.from_credentials(credentials)
         # Refresh credentials
         _to_dynamo(
             self.serial_number, 'lyft_credentials', lyft_account.credentials)

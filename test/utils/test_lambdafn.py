@@ -39,7 +39,9 @@ class TestApiHandler:
         assert response['statusCode'] == 404
         assert response['headers']['Location'] == 'elsewhere'
 
-    def test_serializes_return_value_if_not_response(self, event, context, model_instance):
+    def test_serializes_return_value_if_not_response(
+        self, event, context, model_instance
+    ):
         @api_handler
         def handler():
             return model_instance(some='dict')
@@ -49,7 +51,9 @@ class TestApiHandler:
         assert response['statusCode'] == 200
         assert response['body'] == '{"some": "dict"}'
 
-    def test_passes_query_parameters_as_keyword_arguments(self, event, context, model_instance):
+    def test_passes_query_parameters_as_keyword_arguments(
+        self, event, context, model_instance
+    ):
         @api_handler
         def handler(param=None):
             return model_instance(param=param)
@@ -130,5 +134,4 @@ class TestApiHandler:
 
         response = handler(event, context)
 
-        print(response)
         assert response['statusCode'] == 404

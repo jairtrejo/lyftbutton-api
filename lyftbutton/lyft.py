@@ -1,4 +1,5 @@
 import os
+from time import time
 
 import attr
 from lyft_rides.auth import AuthorizationCodeGrant
@@ -28,9 +29,23 @@ class LyftAccount:
 
     @classmethod
     def from_credentials(cls, credential_data):
+        credential_data['expires_in_seconds'] = (
+            int(credential_data['expires_in_seconds']) - time())
         oauth2credential = OAuth2Credential(**credential_data)
         session = Session(oauth2credential)
         client = LyftRidesClient(session)
+
+        client.refresh_oauth_credential()
+        credentials = client.session.oauth2credential
+        credential_data = {
+            'client_id': credentials.client_id,
+            'access_token': credentials.access_token,
+            'expires_in_seconds': credentials.expires_in_seconds,
+            'scopes': list(credentials.scopes),
+            'grant_type': credentials.grant_type,
+            'client_secret': credentials.client_secret,
+            'refresh_token': credentials.refresh_token,
+        }
 
         return cls(
             **client.get_user_profile().json, credentials=credential_data)
@@ -53,6 +68,7 @@ class LyftAuth:
         session = auth_flow.get_session(url)
 
         credentials = session.oauth2credential
+
         credential_data = {
             'client_id': credentials.client_id,
             'access_token': credentials.access_token,
