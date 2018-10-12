@@ -8,18 +8,25 @@ from lyft_rides.session import OAuth2Credential, Session
 
 
 def _get_auth_flow():
-    CLIENT_ID = os.environ.get("LYFT_CLIENT_ID")
-    CLIENT_SECRET = os.environ.get("LYFT_CLIENT_SECRET")
-
     auth_flow = AuthorizationCodeGrant(
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
+        client_id=os.environ.get("LYFT_CLIENT_ID"),
+        client_secret=os.environ.get("LYFT_CLIENT_SECRET"),
         scopes={"profile", "rides.request", "offline"},
         state_token="fixed",
         is_sandbox_mode=False,
     )
 
     return auth_flow
+
+
+def _credentials_to_dict(credentials):
+    return {
+        "access_token": credentials.access_token,
+        "expires_in_seconds": credentials.expires_in_seconds,
+        "scopes": list(credentials.scopes),
+        "grant_type": credentials.grant_type,
+        "refresh_token": credentials.refresh_token,
+    }
 
 
 @attr.s
@@ -35,24 +42,19 @@ class LyftAccount:
         credential_data["expires_in_seconds"] = (
             int(credential_data["expires_in_seconds"]) - time()
         )
-        oauth2credential = OAuth2Credential(**credential_data)
+        oauth2credential = OAuth2Credential(
+            **credential_data,
+            client_id=os.environ.get("LYFT_CLIENT_ID"),
+            client_secret=os.environ.get("LYFT_CLIENT_SECRET")
+        )
         session = Session(oauth2credential)
         client = LyftRidesClient(session)
 
         client.refresh_oauth_credential()
-        credentials = client.session.oauth2credential
-        credential_data = {
-            "client_id": credentials.client_id,
-            "access_token": credentials.access_token,
-            "expires_in_seconds": credentials.expires_in_seconds,
-            "scopes": list(credentials.scopes),
-            "grant_type": credentials.grant_type,
-            "client_secret": credentials.client_secret,
-            "refresh_token": credentials.refresh_token,
-        }
 
         return cls(
-            **client.get_user_profile().json, credentials=credential_data
+            **client.get_user_profile().json,
+            credentials=_credentials_to_dict(client.session.oauth2credential)
         )
 
     def asdict(self):
@@ -74,19 +76,9 @@ class LyftAuth:
         )
         session = auth_flow.get_session(url)
 
-        credentials = session.oauth2credential
-
-        credential_data = {
-            "client_id": credentials.client_id,
-            "access_token": credentials.access_token,
-            "expires_in_seconds": credentials.expires_in_seconds,
-            "scopes": list(credentials.scopes),
-            "grant_type": credentials.grant_type,
-            "client_secret": credentials.client_secret,
-            "refresh_token": credentials.refresh_token,
-        }
-
-        return LyftAccount.from_credentials(credential_data)
+        return LyftAccount.from_credentials(
+            _credentials_to_dict(session.oauth2credential)
+        )
 
     @classmethod
     def get_url(self):
