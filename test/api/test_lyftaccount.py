@@ -13,11 +13,12 @@ class TestGetLyftAccount:
         response = get_lyft_account.__wrapped__()
 
         assert response.status_code == 404
-        assert 'url' in json.loads(response.body)
+        assert "url" in json.loads(response.body)
 
     def test_get_authenticated(self, known_button_id, known_lyft_auth):
         response = get_lyft_account.__wrapped__(
-            auth_context={'button_id': known_button_id})
+            auth_context={"button_id": known_button_id}
+        )
 
         assert type(response) is LyftAccount
 
@@ -30,17 +31,19 @@ class TestCreateLyftAccount:
         response = create_lyft_account.__wrapped__(known_lyft_auth)
 
         assert response.status_code == 200
-        assert response.headers['Set-Cookie'] == 'Token=token:known-button-id'
+        assert response.headers["Set-Cookie"] == "Token=token:known-button-id"
 
     def test_login_with_a_new_button(
         self, unknown_lyft_auth, unknown_button_id
     ):
         response = create_lyft_account.__wrapped__(
-            unknown_lyft_auth,
-            button_id=unknown_button_id)
+            unknown_lyft_auth, button_id=unknown_button_id
+        )
 
         assert response.status_code == 200
-        assert response.headers['Set-Cookie'] == 'Token=token:unknown-button-id'
+        assert (
+            response.headers["Set-Cookie"] == "Token=token:unknown-button-id"
+        )
 
     def test_change_lyft_account_for_logged_in_button(
         self, unknown_lyft_auth, known_button_id
@@ -48,10 +51,11 @@ class TestCreateLyftAccount:
         response = create_lyft_account.__wrapped__(
             unknown_lyft_auth,
             button_id=known_button_id,
-            auth_context={'button_id': known_button_id})
+            auth_context={"button_id": known_button_id},
+        )
 
         assert response.status_code == 200
-        assert 'id' in json.loads(response.body)
+        assert "id" in json.loads(response.body)
 
     def test_login_with_an_invalid_state_or_code(self, invalid_lyft_auth):
         response = create_lyft_account.__wrapped__(invalid_lyft_auth)
@@ -61,7 +65,7 @@ class TestCreateLyftAccount:
         self, known_button_id, unknown_lyft_auth
     ):
         response = create_lyft_account.__wrapped__(
-            unknown_lyft_auth,
-            button_id=known_button_id)
+            unknown_lyft_auth, button_id=known_button_id
+        )
 
         assert response == Response(status_code=403, body=None, headers={})

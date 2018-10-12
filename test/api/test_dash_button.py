@@ -1,5 +1,8 @@
 from lyftbutton.api import (
-    get_dash_button, set_dash_button_home, set_dash_button_default_destination)
+    get_dash_button,
+    set_dash_button_home,
+    set_dash_button_default_destination,
+)
 from lyftbutton.dashbutton import Location
 
 
@@ -11,7 +14,8 @@ class TestGetDashButton:
 
     def test_get_authenticated(self, known_button_id):
         response = get_dash_button.__wrapped__(
-            auth_context={'button_id': known_button_id})
+            auth_context={"button_id": known_button_id}
+        )
 
         assert response.serial_number == known_button_id
 
@@ -28,7 +32,8 @@ class TestSetDashButtonHome:
         home = Location(lat=100.2, lng=100.3)
 
         response = set_dash_button_home.__wrapped__(
-            home, auth_context={'button_id': known_button_id})
+            home, auth_context={"button_id": known_button_id}
+        )
 
         assert response.serial_number == known_button_id
         assert response.home.lat == home.lat
@@ -47,7 +52,8 @@ class TestSetDashButtonDestination:
         destination = Location(lat=100.2, lng=100.3)
 
         response = set_dash_button_default_destination.__wrapped__(
-            destination, auth_context={'button_id': known_button_id})
+            destination, auth_context={"button_id": known_button_id}
+        )
 
         assert response.serial_number == known_button_id
         assert response.destination.lat == destination.lat
