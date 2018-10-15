@@ -80,7 +80,7 @@ class LyftAuth:
             _credentials_to_dict(session.oauth2credential)
         )
 
-    @classmethod
-    def get_url(self):
+    @staticmethod
+    def get_url():
         auth_flow = _get_auth_flow()
         return auth_flow.get_authorization_url()

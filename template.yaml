@@ -12,6 +12,12 @@ Parameters:
   LYFT_CLIENT_SECRET:
     Type: String
     Description: Lyft API Client Secret
+  GOOGLE_CLIENT_ID:
+    Type: String
+    Description: Lyft API Client ID
+  GOOGLE_CLIENT_SECRET:
+    Type: String
+    Description: Lyft API Client Secret
 
 Globals:
   Function:
@@ -22,6 +28,8 @@ Globals:
         DYNAMO_ENDPOINT: !Ref DYNAMO_ENDPOINT
         LYFT_CLIENT_ID: !Ref LYFT_CLIENT_ID
         LYFT_CLIENT_SECRET: !Ref LYFT_CLIENT_SECRET
+        GOOGLE_CLIENT_ID: !Ref GOOGLE_CLIENT_ID
+        GOOGLE_CLIENT_SECRET: !Ref GOOGLE_CLIENT_SECRET
 
 Resources:
   ButtonOfLyft:
@@ -96,3 +104,42 @@ Resources:
           Properties:
             Path: /dash-button/destination
             Method: post
+
+  GetGoogleAccountFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.get_google_account
+      Runtime: python3.6
+      Events:
+        SetDashButtonDestination:
+          Type: Api
+          Properties:
+            Path: /google-account
+            Method: get
+
+  SetGoogleAccountFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.set_google_account
+      Runtime: python3.6
+      Events:
+        SetDashButtonDestination:
+          Type: Api
+          Properties:
+            Path: /google-account
+            Method: post
+
+  DeleteGoogleAccountFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.delete_google_account
+      Runtime: python3.6
+      Events:
+        SetDashButtonDestination:
+          Type: Api
+          Properties:
+            Path: /google-account
+            Method: delete

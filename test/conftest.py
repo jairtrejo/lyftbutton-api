@@ -1,13 +1,16 @@
 import attr
 import lyft_rides.errors
+import oauth2client.client
 import pytest
 
+from lyftbutton.google import GoogleAccount, GoogleAuth
 from lyftbutton.lyft import LyftAuth, LyftAccount
 
 
 @attr.s
 class DashButton:
     serial_number = attr.ib()
+    google_account = attr.ib(default=None)
 
     def find(self):
         raise NotImplementedError
@@ -32,10 +35,13 @@ def jwt(monkeypatch):
 
 @pytest.fixture
 def known_button_id(monkeypatch):
-    button_id = "known-button-id"
+    button_id = "button:known"
     button = DashButton(serial_number=button_id)
     lyft_account = LyftAccount(
-        id=456, first_name="Jair", last_name="Trejo", has_taken_a_ride=True
+        id="lyft:123",
+        first_name="Jair",
+        last_name="Trejo",
+        has_taken_a_ride=True,
     )
     button.lyft_account = lyft_account
 
@@ -43,6 +49,7 @@ def known_button_id(monkeypatch):
         DashButton, "find", lambda button_id=None, lyft_id=None: button
     )
     monkeypatch.setattr("lyftbutton.api.lyftaccount.DashButton", DashButton)
+    monkeypatch.setattr("lyftbutton.api.google.DashButton", DashButton)
     monkeypatch.setattr("lyftbutton.api.dashbutton.DashButton", DashButton)
 
     return button_id
@@ -50,7 +57,7 @@ def known_button_id(monkeypatch):
 
 @pytest.fixture
 def unknown_button_id(monkeypatch):
-    button_id = "unknown-button-id"
+    button_id = "button:unknown"
     monkeypatch.setattr(
         DashButton, "find", lambda button_id=None, lyft_id=None: None
     )
@@ -61,10 +68,13 @@ def unknown_button_id(monkeypatch):
 
 @pytest.fixture
 def known_lyft_auth(monkeypatch):
-    button_id = "known-button-id"
+    button_id = "button:known"
     button = DashButton(serial_number=button_id)
     lyft_account = LyftAccount(
-        id=123, first_name="Jair", last_name="Trejo", has_taken_a_ride=True
+        id="lyft:123",
+        first_name="Jair",
+        last_name="Trejo",
+        has_taken_a_ride=True,
     )
     button.lyft_account = lyft_account
 
@@ -83,7 +93,10 @@ def unknown_lyft_auth(monkeypatch):
     monkeypatch.setattr(
         "lyftbutton.lyft.LyftAuth.lyft_account",
         LyftAccount(
-            id=123, first_name="Jair", last_name="Trejo", has_taken_a_ride=True
+            id="lyft:123",
+            first_name="Jair",
+            last_name="Trejo",
+            has_taken_a_ride=True,
         ),
     )
     find = DashButton.find
@@ -113,3 +126,36 @@ def invalid_lyft_auth(monkeypatch):
     monkeypatch.setattr("lyftbutton.api.lyftaccount.LyftAuth", LyftAuth)
 
     return LyftAuth(state="unknown", code="invalid")
+
+
+@pytest.fixture
+def known_google_account(monkeypatch, known_button_id):
+    button = DashButton.find(known_button_id)
+    button.google_account = GoogleAccount(calendar="My Google Calendar")
+
+    monkeypatch.setattr("lyftbutton.api.google.DashButton", DashButton)
+
+    return button.google_account
+
+
+@pytest.fixture
+def google_auth(monkeypatch):
+    monkeypatch.setattr(
+        "lyftbutton.google.GoogleAuth.google_account",
+        GoogleAccount(calendar="My Google Calendar"),
+    )
+
+    return GoogleAuth(code="google:code")
+
+
+@pytest.fixture
+def invalid_google_auth(monkeypatch):
+    class GoogleAuth:
+        def __init__(self, code=None):
+            pass
+
+        @property
+        def google_account(self):
+            raise oauth2client.client.FlowExchangeError
+
+    return GoogleAuth(code="google:code")

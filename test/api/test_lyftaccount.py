@@ -31,7 +31,7 @@ class TestCreateLyftAccount:
         response = create_lyft_account.__wrapped__(known_lyft_auth)
 
         assert response.status_code == 200
-        assert response.headers["Set-Cookie"] == "Token=token:known-button-id"
+        assert response.headers["Set-Cookie"] == "Token=token:button:known"
 
     def test_login_with_a_new_button(
         self, unknown_lyft_auth, unknown_button_id
@@ -41,9 +41,7 @@ class TestCreateLyftAccount:
         )
 
         assert response.status_code == 200
-        assert (
-            response.headers["Set-Cookie"] == "Token=token:unknown-button-id"
-        )
+        assert response.headers["Set-Cookie"] == "Token=token:button:unknown"
 
     def test_change_lyft_account_for_logged_in_button(
         self, unknown_lyft_auth, known_button_id

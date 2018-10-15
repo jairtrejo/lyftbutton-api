@@ -3,6 +3,7 @@ from functools import lru_cache
 
 import attr
 
+from lyftbutton.google import GoogleAccount
 from lyftbutton.utils.dynamo import dynamodb
 from lyftbutton.lyft import LyftAccount
 
@@ -73,6 +74,24 @@ class DashButton:
             self.serial_number, "lyft_credentials", lyft_account.credentials
         )
 
+    def _get_google_account(self):
+        button_data = _from_dynamo(self.serial_number)
+        credentials = button_data.get("google_credentials", None)
+
+        if credentials:
+            google_account = GoogleAccount.from_credentials(credentials)
+        else:
+            google_account = None
+
+        return google_account
+
+    def _set_google_account(self, google_account):
+        _to_dynamo(
+            self.serial_number,
+            "google_credentials",
+            google_account.credentials if google_account else None,
+        )
+
     def _get_location(self, field):
         button_data = _from_dynamo(self.serial_number)
         location_data = button_data.get(field, None)
@@ -100,6 +119,7 @@ class DashButton:
 
     serial_number = attr.ib()
     lyft_account = property(_get_lyft_account, _set_lyft_account)
+    google_account = property(_get_google_account, _set_google_account)
     home = property(get_home, set_home)
     destination = property(get_destination, set_destination)
 

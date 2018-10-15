@@ -10,9 +10,11 @@ setup(
     license="MIT",
     packages=find_packages(),
     install_requires=[
-        "lyft-rides==0.2",
         "attrs==18.2",
-        "pyjwt==1.6.4",
+        "google-api-python-client==1.7.4",
+        "oauth2client==4.1.3",
+        "lyft-rides==0.2",
+        "PyJWT==1.6.4",
         "structlog==18.2.0",
     ],
     zip_safe=False,
