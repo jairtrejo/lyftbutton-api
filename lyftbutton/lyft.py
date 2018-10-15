@@ -69,7 +69,7 @@ class LyftAuth:
     code = attr.ib()
 
     @property
-    def lyft_account(self):
+    def account(self):
         auth_flow = _get_auth_flow()
         url = "url?code={code}&state={state}".format(
             code=self.code, state=self.state

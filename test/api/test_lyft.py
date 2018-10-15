@@ -15,9 +15,9 @@ class TestGetLyftAccount:
         assert response.status_code == 404
         assert "url" in json.loads(response.body)
 
-    def test_get_authenticated(self, known_button_id, known_lyft_auth):
+    def test_get_authenticated(self, known_serial_number, known_lyft_auth):
         response = get_lyft_account.__wrapped__(
-            auth_context={"button_id": known_button_id}
+            auth_context={"serial_number": known_serial_number}
         )
 
         assert type(response) is LyftAccount
@@ -26,7 +26,7 @@ class TestGetLyftAccount:
 @pytest.mark.usefixtures("environment", "jwt")
 class TestCreateLyftAccount:
     def test_login_with_an_existing_button(
-        self, known_lyft_auth, known_button_id
+        self, known_lyft_auth, known_serial_number
     ):
         response = create_lyft_account.__wrapped__(known_lyft_auth)
 
@@ -34,22 +34,22 @@ class TestCreateLyftAccount:
         assert response.headers["Set-Cookie"] == "Token=token:button:known"
 
     def test_login_with_a_new_button(
-        self, unknown_lyft_auth, unknown_button_id
+        self, unknown_lyft_auth, unknown_serial_number
     ):
         response = create_lyft_account.__wrapped__(
-            unknown_lyft_auth, button_id=unknown_button_id
+            unknown_lyft_auth, serial_number=unknown_serial_number
         )
 
         assert response.status_code == 200
         assert response.headers["Set-Cookie"] == "Token=token:button:unknown"
 
     def test_change_lyft_account_for_logged_in_button(
-        self, unknown_lyft_auth, known_button_id
+        self, unknown_lyft_auth, known_serial_number
     ):
         response = create_lyft_account.__wrapped__(
             unknown_lyft_auth,
-            button_id=known_button_id,
-            auth_context={"button_id": known_button_id},
+            serial_number=known_serial_number,
+            auth_context={"serial_number": known_serial_number},
         )
 
         assert response.status_code == 200
@@ -60,10 +60,10 @@ class TestCreateLyftAccount:
         assert response.status_code == 403
 
     def test_claim_a_button_that_belongs_to_someone_else(
-        self, known_button_id, unknown_lyft_auth
+        self, known_serial_number, unknown_lyft_auth
     ):
         response = create_lyft_account.__wrapped__(
-            unknown_lyft_auth, button_id=known_button_id
+            unknown_lyft_auth, serial_number=known_serial_number
         )
 
         assert response == Response(status_code=403, body=None, headers={})

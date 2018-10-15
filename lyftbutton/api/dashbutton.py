@@ -7,8 +7,8 @@ def get_dash_button(auth_context=None):
     if not auth_context:
         return Response(status_code=403)
 
-    button_id = auth_context["button_id"]
-    button = DashButton.find(button_id=button_id)
+    serial_number = auth_context["serial_number"]
+    button = DashButton.find(serial_number=serial_number)
     return button
 
 
@@ -17,8 +17,8 @@ def set_dash_button_home(location, auth_context=None):
     if not auth_context:
         return Response(status_code=403)
 
-    button_id = auth_context["button_id"]
-    button = DashButton.find(button_id=button_id)
+    serial_number = auth_context["serial_number"]
+    button = DashButton.find(serial_number=serial_number)
     button.home = location
 
     return button
@@ -29,8 +29,8 @@ def set_dash_button_default_destination(location, auth_context=None):
     if not auth_context:
         return Response(status_code=403)
 
-    button_id = auth_context["button_id"]
-    button = DashButton.find(button_id=button_id)
+    serial_number = auth_context["serial_number"]
+    button = DashButton.find(serial_number=serial_number)
     button.destination = location
 
     return button

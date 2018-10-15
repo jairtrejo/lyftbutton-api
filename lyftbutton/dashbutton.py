@@ -48,8 +48,10 @@ class Location:
 @attr.s
 class DashButton:
     @classmethod
-    def find(cls, button_id=None, lyft_id=None):
-        button_data = _from_dynamo(serial_number=button_id, lyft_id=lyft_id)
+    def find(cls, serial_number=None, lyft_id=None):
+        button_data = _from_dynamo(
+            serial_number=serial_number, lyft_id=lyft_id
+        )
 
         if button_data:
             return cls(serial_number=button_data["serial_number"])

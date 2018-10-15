@@ -18,9 +18,11 @@ class DashButton:
 
 @pytest.fixture
 def environment(monkeypatch):
-    monkeypatch.setenv("LYFT_CLIENT_ID", "fakeid")
-    monkeypatch.setenv("LYFT_CLIENT_SECRET", "fakesecret")
     monkeypatch.setenv("TOKEN_SECRET", "somesecret")
+    monkeypatch.setenv("LYFT_CLIENT_ID", "lyft:fakeid")
+    monkeypatch.setenv("LYFT_CLIENT_SECRET", "lyft:fakesecret")
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "google:fakeid")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "google:fakesecret")
 
 
 @pytest.fixture
@@ -28,15 +30,15 @@ def jwt(monkeypatch):
     monkeypatch.setattr(
         "jwt.encode",
         lambda payload, secret, algorithm: (
-            b"token:%s" % payload["button_id"].encode("utf-8")
+            b"token:%s" % payload["serial_number"].encode("utf-8")
         ),
     )
 
 
 @pytest.fixture
-def known_button_id(monkeypatch):
-    button_id = "button:known"
-    button = DashButton(serial_number=button_id)
+def known_serial_number(monkeypatch):
+    serial_number = "button:known"
+    button = DashButton(serial_number=serial_number)
     lyft_account = LyftAccount(
         id="lyft:123",
         first_name="Jair",
@@ -46,30 +48,30 @@ def known_button_id(monkeypatch):
     button.lyft_account = lyft_account
 
     monkeypatch.setattr(
-        DashButton, "find", lambda button_id=None, lyft_id=None: button
+        DashButton, "find", lambda serial_number=None, lyft_id=None: button
     )
-    monkeypatch.setattr("lyftbutton.api.lyftaccount.DashButton", DashButton)
+    monkeypatch.setattr("lyftbutton.api.lyft.DashButton", DashButton)
     monkeypatch.setattr("lyftbutton.api.google.DashButton", DashButton)
     monkeypatch.setattr("lyftbutton.api.dashbutton.DashButton", DashButton)
 
-    return button_id
+    return serial_number
 
 
 @pytest.fixture
-def unknown_button_id(monkeypatch):
-    button_id = "button:unknown"
+def unknown_serial_number(monkeypatch):
+    serial_number = "button:unknown"
     monkeypatch.setattr(
-        DashButton, "find", lambda button_id=None, lyft_id=None: None
+        DashButton, "find", lambda serial_number=None, lyft_id=None: None
     )
-    monkeypatch.setattr("lyftbutton.api.lyftaccount.DashButton", DashButton)
+    monkeypatch.setattr("lyftbutton.api.lyft.DashButton", DashButton)
     monkeypatch.setattr("lyftbutton.api.dashbutton.DashButton", DashButton)
-    return button_id
+    return serial_number
 
 
 @pytest.fixture
 def known_lyft_auth(monkeypatch):
-    button_id = "button:known"
-    button = DashButton(serial_number=button_id)
+    serial_number = "button:known"
+    button = DashButton(serial_number=serial_number)
     lyft_account = LyftAccount(
         id="lyft:123",
         first_name="Jair",
@@ -78,11 +80,11 @@ def known_lyft_auth(monkeypatch):
     )
     button.lyft_account = lyft_account
 
-    monkeypatch.setattr("lyftbutton.lyft.LyftAuth.lyft_account", lyft_account)
+    monkeypatch.setattr("lyftbutton.lyft.LyftAuth.account", lyft_account)
     monkeypatch.setattr(
-        DashButton, "find", lambda button_id=None, lyft_id=None: button
+        DashButton, "find", lambda serial_number=None, lyft_id=None: button
     )
-    monkeypatch.setattr("lyftbutton.api.lyftaccount.DashButton", DashButton)
+    monkeypatch.setattr("lyftbutton.api.lyft.DashButton", DashButton)
     monkeypatch.setattr("lyftbutton.api.dashbutton.DashButton", DashButton)
 
     return LyftAuth(state="123", code="known")
@@ -91,7 +93,7 @@ def known_lyft_auth(monkeypatch):
 @pytest.fixture
 def unknown_lyft_auth(monkeypatch):
     monkeypatch.setattr(
-        "lyftbutton.lyft.LyftAuth.lyft_account",
+        "lyftbutton.lyft.LyftAuth.account",
         LyftAccount(
             id="lyft:123",
             first_name="Jair",
@@ -103,11 +105,11 @@ def unknown_lyft_auth(monkeypatch):
     monkeypatch.setattr(
         DashButton,
         "find",
-        lambda button_id=None, lyft_id=None: None
+        lambda serial_number=None, lyft_id=None: None
         if lyft_id
-        else find(button_id=button_id),
+        else find(serial_number=serial_number),
     )
-    monkeypatch.setattr("lyftbutton.api.lyftaccount.DashButton", DashButton)
+    monkeypatch.setattr("lyftbutton.api.lyft.DashButton", DashButton)
     monkeypatch.setattr("lyftbutton.api.dashbutton.DashButton", DashButton)
 
     return LyftAuth(state="123", code="known")
@@ -120,17 +122,17 @@ def invalid_lyft_auth(monkeypatch):
             pass
 
         @property
-        def lyft_account(self):
+        def account(self):
             raise lyft_rides.errors.APIError("API error")
 
-    monkeypatch.setattr("lyftbutton.api.lyftaccount.LyftAuth", LyftAuth)
+    monkeypatch.setattr("lyftbutton.api.lyft.LyftAuth", LyftAuth)
 
     return LyftAuth(state="unknown", code="invalid")
 
 
 @pytest.fixture
-def known_google_account(monkeypatch, known_button_id):
-    button = DashButton.find(known_button_id)
+def known_google_account(monkeypatch, known_serial_number):
+    button = DashButton.find(known_serial_number)
     button.google_account = GoogleAccount(calendar="My Google Calendar")
 
     monkeypatch.setattr("lyftbutton.api.google.DashButton", DashButton)
@@ -141,7 +143,7 @@ def known_google_account(monkeypatch, known_button_id):
 @pytest.fixture
 def google_auth(monkeypatch):
     monkeypatch.setattr(
-        "lyftbutton.google.GoogleAuth.google_account",
+        "lyftbutton.google.GoogleAuth.account",
         GoogleAccount(calendar="My Google Calendar"),
     )
 
@@ -155,7 +157,7 @@ def invalid_google_auth(monkeypatch):
             pass
 
         @property
-        def google_account(self):
+        def account(self):
             raise oauth2client.client.FlowExchangeError
 
     return GoogleAuth(code="google:code")

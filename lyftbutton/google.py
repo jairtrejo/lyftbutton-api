@@ -81,7 +81,7 @@ class GoogleAuth:
     code = attr.ib()
 
     @property
-    def google_account(self):
+    def account(self):
         """
         Get a google account by authenticating and obtaining credentials.
 
