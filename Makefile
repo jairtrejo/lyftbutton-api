@@ -1,4 +1,4 @@
-.PHONY: all nodeps lint test clean
+.PHONY: all nodeps check lint test clean
 
 all: clean check
 	pip install -t dist .
