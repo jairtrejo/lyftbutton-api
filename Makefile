@@ -11,6 +11,7 @@ check: lint test
 lint:
 	black --line-length 79 --check --exclude dist .
 	flake8 --exclude dist .
+	isort --check --multi-line=3 --trailing-comma --force-grid-wrap=0 --combine-as --line-width=79 lyftbutton/**/*.py test/**/*.py
 
 test:
 	pytest

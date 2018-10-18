@@ -2,7 +2,6 @@ import os
 
 import boto3
 
-
 LOCAL_DYNAMO_ENDPOINT = "http://docker.for.mac.localhost:8000/"
 
 

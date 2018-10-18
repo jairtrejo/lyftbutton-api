@@ -1,13 +1,13 @@
 """
 Utilities to authenticate with Google and obtain user credentials.
 """
-import os
 import json
-import httplib2
+import os
 from decimal import Decimal
 
-import attr
 import apiclient.discovery
+import attr
+import httplib2
 from oauth2client.client import Credentials, OAuth2WebServerFlow
 
 

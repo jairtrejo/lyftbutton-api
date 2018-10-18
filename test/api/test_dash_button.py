@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from lyftbutton.api import get_dash_button, edit_dash_button
+from lyftbutton.api import edit_dash_button, get_dash_button
 from lyftbutton.dashbutton import DashButton, Location
 
 

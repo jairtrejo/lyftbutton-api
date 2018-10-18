@@ -4,9 +4,9 @@ import os
 import jwt
 import lyft_rides.errors
 
-from lyftbutton.utils.lambdafn import api_handler, Response
 from lyftbutton.lyft import LyftAuth
 from lyftbutton.repository import LyftButton
+from lyftbutton.utils.lambdafn import Response, api_handler
 
 
 @api_handler

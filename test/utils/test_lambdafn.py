@@ -3,7 +3,7 @@ import json
 import attr
 import pytest
 
-from lyftbutton.utils.lambdafn import api_handler, Response
+from lyftbutton.utils.lambdafn import Response, api_handler
 
 
 @pytest.fixture
