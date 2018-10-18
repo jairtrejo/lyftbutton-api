@@ -6,7 +6,7 @@ import lyft_rides.errors
 
 from lyftbutton.utils.lambdafn import api_handler, Response
 from lyftbutton.lyft import LyftAuth
-from lyftbutton.dashbutton import DashButton
+from lyftbutton.repository import LyftButton
 
 
 @api_handler
@@ -19,7 +19,7 @@ def get_lyft_account(auth_context=None):
 
     Args:
         auth_context (str): Authentication context provided by authorizer.
-        auth_context.serial_number (str): User's button id
+        auth_context.lyft_id (str): User's button id
 
     Returns:
         (:class:`LyftAccount`) If the user is authenticated, the Lyft account.
@@ -29,21 +29,19 @@ def get_lyft_account(auth_context=None):
             status_code=404, body=json.dumps({"url": LyftAuth.get_url()})
         )
 
-    btn = DashButton.find(serial_number=auth_context["serial_number"])
+    btn = LyftButton.find(lyft_id=auth_context["lyft_id"])
     return getattr(btn, "lyft_account", None)
 
 
 @api_handler(model=LyftAuth)
-def create_lyft_account(lyft_auth, serial_number=None, auth_context=None):
+def create_lyft_account(lyft_auth, auth_context=None):
     """
-    Register a new Lyft account for the authenticated user
+    Register a new Lyft account
 
     Args:
         lyft_auth (:class:`LyftAuth`) Lyft postback info.
-        serial_number (str) Button id the user is trying to associate with the
-        lyft account.
-        auth_context (str): Authentication context provided by authorizer.
-        auth_context.serial_number (str): User's button id
+        auth_context (dict): Authentication context provided by authorizer.
+        auth_context.lyft_id (str): User's lyft account id
 
     Returns:
         (:class:`LyftAccount`) The Lyft account.
@@ -53,31 +51,29 @@ def create_lyft_account(lyft_auth, serial_number=None, auth_context=None):
     except lyft_rides.errors.APIError as e:
         return Response(status_code=403, body='{"message": "%s"}' % e)
 
-    if auth_context:
-        btn = DashButton.find(serial_number=auth_context["serial_number"])
-    elif serial_number and not DashButton.find(serial_number=serial_number):
-        btn = DashButton(serial_number=serial_number)
-    else:
-        btn = DashButton.find(lyft_id=lyft_account.id)
+    existing_btn = LyftButton.find(lyft_id=lyft_account.id)
 
-    if btn:
-        btn.lyft_account = lyft_account
-
-        body = json.dumps(lyft_account.asdict())
-
-        response = Response(status_code=200, body=body)
-
-        if not auth_context:
-            TOKEN_SECRET = os.environ.get("TOKEN_SECRET")
-            token = jwt.encode(
-                {"serial_number": btn.serial_number},
-                TOKEN_SECRET,
-                algorithm="HS256",
-            ).decode("utf-8")
-
-            response = response.set_cookie("Token", token)
-
-        return response
-
-    else:
+    if auth_context and not existing_btn:
+        auth_btn = LyftButton.find(lyft_id=auth_context["lyft_id"])
+    elif auth_context and existing_btn:
         return Response(status_code=403)
+    else:
+        auth_btn = None
+
+    btn = auth_btn or existing_btn or LyftButton(lyft_id=lyft_account.id)
+
+    btn.lyft_account = lyft_account
+
+    response = Response(status_code=200)
+    response.body = json.dumps(lyft_account.asdict())
+
+    if (not auth_context) or (auth_context["lyft_id"] != lyft_account.id):
+        token = jwt.encode(
+            {"lyft_id": lyft_account.id},
+            os.environ.get("TOKEN_SECRET"),
+            algorithm="HS256",
+        ).decode("utf-8")
+
+        response = response.set_cookie("Token", token)
+
+    return response

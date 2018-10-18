@@ -1,4 +1,7 @@
 import json
+from unittest.mock import MagicMock, PropertyMock, patch
+
+import oauth2client.client
 
 from lyftbutton.api import (
     delete_google_account,
@@ -13,48 +16,63 @@ class TestGetGoogleAccount:
 
         assert response.status_code == 403
 
-    def test_no_account(self, known_serial_number):
-        auth_context = {"serial_number": known_serial_number}
+    @patch("lyftbutton.api.google.LyftButton")
+    def test_no_account(self, MockLyftButton):
+        MockLyftButton.find.return_value.google_account = None
 
-        response = get_google_account.__wrapped__(auth_context=auth_context)
+        response = get_google_account.__wrapped__(
+            auth_context={"lyft_id": "lyft:123"}
+        )
 
         assert response.status_code == 404
         assert "url" in json.loads(response.body)
 
-    def test_authenticated(self, known_serial_number, known_google_account):
-        auth_context = {"serial_number": known_serial_number}
+    @patch("lyftbutton.api.google.LyftButton")
+    def test_authenticated(self, MockLyftButton):
+        MockLyftButton.find.return_value.google_account.calendar = (
+            "My Calendar"
+        )
 
-        response = get_google_account.__wrapped__(auth_context=auth_context)
+        response = get_google_account.__wrapped__(
+            auth_context={"lyft_id": "lyft:123"}
+        )
 
-        assert response.calendar == known_google_account.calendar
+        assert response.calendar == "My Calendar"
 
 
 class TestSetGoogleAccount:
-    def test_set_account(self, known_serial_number, google_auth):
-        auth_context = {"serial_number": known_serial_number}
+    @patch("lyftbutton.api.google.LyftButton")
+    def test_set_account(self, MockLyftButton):
+        google_auth = MagicMock()
 
         response = set_google_account.__wrapped__(
-            google_auth, auth_context=auth_context
+            google_auth, auth_context={"lyft_id": "lyft:123"}
         )
 
         assert response.calendar == google_auth.account.calendar
 
-    def test_set_invalid_account(
-        self, known_serial_number, invalid_google_auth
-    ):
-        auth_context = {"serial_number": known_serial_number}
+    @patch("lyftbutton.api.google.LyftButton")
+    def test_set_invalid_account(self, MockLyftButton):
+        invalid_google_auth = MagicMock()
+        type(invalid_google_auth).account = PropertyMock(
+            side_effect=oauth2client.client.FlowExchangeError
+        )
 
         response = set_google_account.__wrapped__(
-            invalid_google_auth, auth_context=auth_context
+            invalid_google_auth, auth_context={"lyft_id": "lyft:123"}
         )
 
         assert response.status_code == 403
 
 
 class TestDeleteGoogleAccount:
-    def test_delete_account(self, known_serial_number):
-        auth_context = {"serial_number": known_serial_number}
+    @patch("lyftbutton.api.google.LyftButton")
+    def test_delete_account(self, MockLyftButton):
+        button = MockLyftButton.find.return_value
 
-        response = delete_google_account.__wrapped__(auth_context=auth_context)
+        response = delete_google_account.__wrapped__(
+            auth_context={"lyft_id": "lyft:123"}
+        )
 
         assert response.status_code == 204
+        assert button.google_account is None

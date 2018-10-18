@@ -79,31 +79,18 @@ Resources:
             Path: /dash-button
             Method: get
 
-  SetDashButtonHomeFunction:
+  EditDashButtonFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: dist/
-      Handler: lyftbutton.set_dash_button_home
+      Handler: lyftbutton.edit_dash_button
       Runtime: python3.6
       Events:
-        SetDashButtonHome:
+        EditDashButton:
           Type: Api
           Properties:
-            Path: /dash-button/home
-            Method: post
-
-  SetDashButtonDestinationFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: dist/
-      Handler: lyftbutton.set_dash_button_default_destination
-      Runtime: python3.6
-      Events:
-        SetDashButtonDestination:
-          Type: Api
-          Properties:
-            Path: /dash-button/destination
-            Method: post
+            Path: /dash-button
+            Method: patch
 
   GetGoogleAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -112,7 +99,7 @@ Resources:
       Handler: lyftbutton.get_google_account
       Runtime: python3.6
       Events:
-        SetDashButtonDestination:
+        GetGoogleAccount:
           Type: Api
           Properties:
             Path: /google-account
@@ -125,7 +112,7 @@ Resources:
       Handler: lyftbutton.set_google_account
       Runtime: python3.6
       Events:
-        SetDashButtonDestination:
+        SetGoogleAccount:
           Type: Api
           Properties:
             Path: /google-account
@@ -138,7 +125,7 @@ Resources:
       Handler: lyftbutton.delete_google_account
       Runtime: python3.6
       Events:
-        SetDashButtonDestination:
+        DeleteGoogleAccount:
           Type: Api
           Properties:
             Path: /google-account
