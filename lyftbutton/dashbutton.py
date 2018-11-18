@@ -4,8 +4,12 @@ import attr
 def _to_location(value):
     if type(value) is dict:
         return Location(**value)
-    else:
+    elif type(value) is Location:
         return value
+    elif value is None:
+        return None
+    else:
+        raise TypeError("Invalid location format")
 
 
 @attr.s

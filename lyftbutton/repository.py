@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 from functools import lru_cache
 
 import attr
@@ -114,7 +115,18 @@ class LyftButton:
         )
 
     def _set_dash_button(self, dash_button):
-        _to_dynamo(self.lyft_id, {"dash_button": dash_button.asdict()})
+        button_data = dash_button.asdict()
+
+        for field in ("home", "destination"):
+            if button_data[field]:
+                button_data[field]["lat"] = Decimal(
+                    "%.6f" % button_data[field]["lat"]
+                )
+                button_data[field]["lng"] = Decimal(
+                    "%.6f" % button_data[field]["lng"]
+                )
+
+        _to_dynamo(self.lyft_id, {"dash_button": button_data})
 
     lyft_id = attr.ib()
     dash_button = property(_get_dash_button, _set_dash_button)
