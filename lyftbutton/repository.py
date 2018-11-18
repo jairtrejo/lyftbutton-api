@@ -1,11 +1,19 @@
+import os
 from functools import lru_cache
 
 import attr
+import boto3
 
 from lyftbutton.dashbutton import DashButton
 from lyftbutton.google import GoogleAccount
 from lyftbutton.lyft import LyftAccount
-from lyftbutton.utils.dynamo import dynamodb
+
+LOCAL_DYNAMO_ENDPOINT = "http://docker.for.mac.localhost:8000/"
+
+if os.getenv("AWS_SAM_LOCAL"):
+    dynamodb = boto3.resource("dynamodb", endpoint_url=LOCAL_DYNAMO_ENDPOINT)
+else:
+    dynamodb = boto3.resource("dynamodb")
 
 
 @lru_cache(maxsize=None)
