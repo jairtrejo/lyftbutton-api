@@ -78,7 +78,11 @@ def api_handler(*args, model=None):
             print("========== DEBUG ===========")
             print("Headers:", event.get("headers"))
             print("Query string:", event.get("queryStringParameters"))
-            parameters = event.get("queryStringParameters", {}) or {}
+
+            # Query parameters
+            query_parameters = event.get("queryStringParameters", {}) or {}
+
+            # Authorization
             if os.getenv("AWS_SAM_LOCAL"):
                 auth_context = authorizer(event, context)
             else:
@@ -86,17 +90,29 @@ def api_handler(*args, model=None):
                     "authorizer", None
                 )
 
-            print("Auth context: ", auth_context)
-
-            if auth_context and auth_context["principalId"] != "anonymous":
-                parameters["auth_context"] = auth_context
+            # Model
+            if model:
+                try:
+                    instance = model(**json.loads(event["body"]))
+                except TypeError as e:
+                    return Response(
+                        status_code=400, body=json.dumps({"message": str(e)})
+                    ).asdict()
 
             try:
-                if model:
-                    instance = model(**json.loads(event["body"]))
-                    response = f(instance, **parameters)
-                else:
-                    response = f(**parameters)
+                args = [instance] if model else []
+                kwargs = {
+                    **query_parameters,
+                    **(
+                        {"auth_context": auth_context}
+                        if auth_context
+                        and auth_context["principalId"] != "anonymous"
+                        else {}
+                    ),
+                }
+
+                response = f(*args, **kwargs)
+
             except TypeError as e:
                 traceback.print_exc()
                 response = Response(
@@ -105,6 +121,7 @@ def api_handler(*args, model=None):
 
             if not response:
                 response = Response(status_code=404)
+
             elif not isinstance(response, Response):
                 body = json.dumps(response.asdict())
                 response = Response(status_code=200, body=body)
@@ -117,6 +134,9 @@ def api_handler(*args, model=None):
         return api_method
 
     if len(args):
+        # The @api_handler(Model) use case
         return to_handler(args[0])
+
     else:
+        # The plain @api_handler use case
         return to_handler
