@@ -8,12 +8,20 @@ from lyftbutton.utils.lambdafn import Response, api_handler
 
 @pytest.fixture
 def event():
-    return {"queryStringParameters": None}
+    return {
+        "httpMethod": "GET",
+        "resource": "/some-resource",
+        "queryStringParameters": None,
+    }
 
 
 @pytest.fixture
 def context():
-    return {}
+    @attr.s
+    class FakeContext:
+        aws_request_id = attr.ib()
+
+    return FakeContext(aws_request_id="Test")
 
 
 @pytest.fixture
@@ -81,11 +89,16 @@ class TestApiHandler:
         def handler(auth_context):
             return Response(status_code=200, body=auth_context["principalId"])
 
-        event["requestContext"] = {"authorizer": {"principalId": "some-id"}}
+        event["requestContext"] = {
+            "authorizer": {
+                "principalId": "some-principal",
+                "lyft_id": "some-id",
+            }
+        }
 
         response = handler(event, context)
 
-        assert response["body"] == "some-id"
+        assert response["body"] == "some-principal"
 
     def test_doesnt_pass_auth_context_if_anonymous(self, event, context):
         @api_handler

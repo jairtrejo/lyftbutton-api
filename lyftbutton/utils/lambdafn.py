@@ -1,10 +1,14 @@
 import json
 import os
-import traceback
 from functools import wraps
 
 import attr
 import jwt
+import structlog
+
+import lyftbutton.logconfig as logconfig
+
+logger = structlog.get_logger(__name__)
 
 
 @attr.s
@@ -75,9 +79,12 @@ def api_handler(*args, model=None):
 
         @wraps(f)
         def api_method(event, context):
-            print("========== DEBUG ===========")
-            print("Headers:", event.get("headers"))
-            print("Query string:", event.get("queryStringParameters"))
+            logconfig.configure()
+            log = logger.new(
+                request_id=context.aws_request_id,
+                method=event["httpMethod"],
+                resource=event["resource"],
+            )
 
             # Query parameters
             query_parameters = event.get("queryStringParameters", {}) or {}
@@ -90,13 +97,30 @@ def api_handler(*args, model=None):
                     "authorizer", None
                 )
 
+            if auth_context and auth_context["principalId"] != "anonymous":
+                log = log.bind(user=auth_context["lyft_id"])
+
             # Model
             if model:
                 try:
                     instance = model(**json.loads(event["body"]))
                 except TypeError as e:
+                    logger.error(
+                        "Invalid model",
+                        model=model,
+                        body=event["body"],
+                        exc_info=e,
+                    )
+
                     return Response(
-                        status_code=400, body=json.dumps({"message": str(e)})
+                        status_code=400,
+                        body=json.dumps(
+                            {
+                                "message": "Invalid {model}".format(
+                                    model=model.__name__
+                                )
+                            }
+                        ),
                     ).asdict()
 
             try:
@@ -114,10 +138,18 @@ def api_handler(*args, model=None):
                 response = f(*args, **kwargs)
 
             except TypeError as e:
-                traceback.print_exc()
-                response = Response(
-                    status_code=400, body=json.dumps({"message": str(e)})
+                logger.error(
+                    "Validation error", args=args, kwargs=kwargs, exc_info=e
                 )
+
+                response = Response(
+                    status_code=400,
+                    body=json.dumps({"message": "Invalid request parameters"}),
+                )
+
+            except Exception:
+                logger.error("Unexpected error")
+                return Response(status_code=500)
 
             if not response:
                 response = Response(status_code=404)
@@ -126,8 +158,14 @@ def api_handler(*args, model=None):
                 body = json.dumps(response.asdict())
                 response = Response(status_code=200, body=body)
 
-            print(response)
-            print("============================")
+            if 200 <= response.status_code < 300:
+                logger.info(
+                    "Success", response=response, status=response.status_code
+                )
+            else:
+                logger.info(
+                    "Failure", response=response, status=response.status_code
+                )
 
             return response.asdict()
 
