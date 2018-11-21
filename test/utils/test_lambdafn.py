@@ -60,6 +60,16 @@ class TestApiHandler:
         assert response["statusCode"] == 200
         assert response["body"] == '{"some": "dict"}'
 
+    def test_treats_dictionaries_as_already_serialized(self, event, context):
+        @api_handler
+        def handler():
+            return {"a": "dictionary"}
+
+        response = handler(event, context)
+
+        assert response["statusCode"] == 200
+        assert response["body"] == '{"a": "dictionary"}'
+
     def test_passes_query_parameters_as_keyword_arguments(
         self, event, context, model_instance
     ):

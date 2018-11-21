@@ -154,6 +154,10 @@ def api_handler(*args, model=None):
             if not response:
                 response = Response(status_code=404)
 
+            elif isinstance(response, dict):
+                body = json.dumps(response)
+                response = Response(status_code=200, body=body)
+
             elif not isinstance(response, Response):
                 body = json.dumps(response.asdict())
                 response = Response(status_code=200, body=body)
