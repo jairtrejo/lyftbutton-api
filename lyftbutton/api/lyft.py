@@ -3,10 +3,13 @@ import os
 
 import jwt
 import lyft_rides.errors
+import structlog
 
 from lyftbutton.lyft import LyftAuth
 from lyftbutton.repository import LyftButton
 from lyftbutton.utils.lambdafn import Response, api_handler
+
+logger = structlog.get_logger(__name__)
 
 
 @api_handler
@@ -49,6 +52,7 @@ def create_lyft_account(lyft_auth, auth_context=None):
     try:
         lyft_account = lyft_auth.account
     except lyft_rides.errors.APIError as e:
+        logger.error("Lyft API Error", exc_info=e)
         return Response(status_code=403, body='{"message": "%s"}' % e)
 
     existing_btn = LyftButton.find(lyft_id=lyft_account.id)
