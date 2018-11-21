@@ -2,6 +2,7 @@ import os
 from time import time
 
 import attr
+import jwt
 from lyft_rides.auth import AuthorizationCodeGrant
 from lyft_rides.client import LyftRidesClient
 from lyft_rides.session import OAuth2Credential, Session
@@ -37,6 +38,14 @@ class LyftAccount:
     has_taken_a_ride = attr.ib()
     credentials = attr.ib(default=None)
 
+    @property
+    def token(self):
+        return jwt.encode(
+            {"lyft_id": self.id},
+            os.environ.get("TOKEN_SECRET"),
+            algorithm="HS256",
+        ).decode("utf-8")
+
     @classmethod
     def from_credentials(cls, credential_data):
         credential_data["expires_in_seconds"] = (
@@ -58,9 +67,13 @@ class LyftAccount:
         )
 
     def asdict(self):
-        return attr.asdict(
+        account_data = attr.asdict(
             self, filter=lambda attr, value: attr.name != "credentials"
         )
+
+        account_data["token"] = self.token
+
+        return account_data
 
 
 @attr.s

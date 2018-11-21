@@ -20,17 +20,22 @@ class TestGetLyftAccount:
     @patch("lyftbutton.api.lyft.LyftButton")
     def test_get_authenticated(self, MockLyftButton):
         button = MockLyftButton.find.return_value
+        button.lyft_account.asdict.return_value = {
+            "id": "lyft:123",
+            "token": "secret-token",
+        }
 
         response = get_lyft_account.__wrapped__(
             auth_context={"lyft_id": "lyft:123"}
         )
 
-        assert response == button.lyft_account
+        assert response["id"] == "lyft:123"
+        assert "token" not in response
 
 
 @pytest.mark.usefixtures("environment")
 class TestCreateLyftAccount:
-    @patch("lyftbutton.api.lyft.jwt")
+    @patch("lyftbutton.lyft.jwt")
     @patch("lyftbutton.api.lyft.LyftAuth")
     @patch("lyftbutton.api.lyft.LyftButton")
     def test_login_with_an_existing_account(
@@ -44,11 +49,10 @@ class TestCreateLyftAccount:
 
         response = create_lyft_account.__wrapped__(MockLyftAuth.return_value)
 
-        assert response.status_code == 200
-        assert response.headers["Set-Cookie"] == "Token=some-token"
+        assert response.id == "lyft:123"
         MockLyftButton.find.assert_called_once_with(lyft_id="lyft:123")
 
-    @patch("lyftbutton.api.lyft.jwt")
+    @patch("lyftbutton.lyft.jwt")
     @patch("lyftbutton.api.lyft.LyftAuth")
     @patch("lyftbutton.api.lyft.LyftButton")
     def test_login_with_a_new_account(
@@ -56,22 +60,14 @@ class TestCreateLyftAccount:
     ):
         MockLyftButton.find.return_value = None
         MockJWT.encode.return_value = "some-token".encode("utf-8")
-        MockLyftAuth.return_value.account.asdict.return_value = {
-            "some": "json"
-        }
+        MockLyftAuth.return_value.account.id = "lyft:123"
 
         response = create_lyft_account.__wrapped__(MockLyftAuth.return_value)
 
-        assert response.status_code == 200
-        assert response.headers["Set-Cookie"] == "Token=some-token"
+        assert response.id == "lyft:123"
         assert (
             MockLyftButton.return_value.lyft_account
             == MockLyftAuth.return_value.account
-        )
-        MockJWT.encode.assert_called_once_with(
-            {"lyft_id": MockLyftAuth.return_value.account.id},
-            "somesecret",
-            algorithm="HS256",
         )
 
     @patch("lyftbutton.api.lyft.LyftAuth")
@@ -82,7 +78,7 @@ class TestCreateLyftAccount:
         response = create_lyft_account.__wrapped__(MockLyftAuth.return_value)
         assert response.status_code == 403
 
-    @patch("lyftbutton.api.lyft.jwt")
+    @patch("lyftbutton.lyft.jwt")
     @patch("lyftbutton.api.lyft.LyftAuth")
     @patch("lyftbutton.api.lyft.LyftButton")
     def test_change_lyft_account_for_logged_in_button(
@@ -108,11 +104,10 @@ class TestCreateLyftAccount:
             MockLyftAuth.return_value, auth_context={"lyft_id": "lyft:123"}
         )
 
-        assert response.status_code == 200
-        assert response.headers["Set-Cookie"] == "Token=some-token"
+        assert response.id == "lyft:456"
         assert logged_in_button.lyft_account.id == "lyft:456"
 
-    @patch("lyftbutton.api.lyft.jwt")
+    @patch("lyftbutton.lyft.jwt")
     @patch("lyftbutton.api.lyft.LyftAuth")
     @patch("lyftbutton.api.lyft.LyftButton")
     def test_claim_a_button_that_belongs_to_someone_else(

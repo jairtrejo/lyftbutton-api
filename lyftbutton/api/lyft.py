@@ -1,7 +1,5 @@
 import json
-import os
 
-import jwt
 import lyft_rides.errors
 import structlog
 
@@ -33,7 +31,14 @@ def get_lyft_account(auth_context=None):
         )
 
     btn = LyftButton.find(lyft_id=auth_context["lyft_id"])
-    return getattr(btn, "lyft_account", None)
+    account = getattr(btn, "lyft_account", None)
+
+    if account:
+        account = account.asdict()
+        # Scrub authentication token
+        del account["token"]
+
+    return account
 
 
 @api_handler(model=LyftAuth)
@@ -68,16 +73,4 @@ def create_lyft_account(lyft_auth, auth_context=None):
 
     btn.lyft_account = lyft_account
 
-    response = Response(status_code=200)
-    response.body = json.dumps(lyft_account.asdict())
-
-    if (not auth_context) or (auth_context["lyft_id"] != lyft_account.id):
-        token = jwt.encode(
-            {"lyft_id": lyft_account.id},
-            os.environ.get("TOKEN_SECRET"),
-            algorithm="HS256",
-        ).decode("utf-8")
-
-        response = response.set_cookie("Token", token)
-
-    return response
+    return lyft_account
