@@ -1,7 +1,9 @@
-dist/**
-.python-version
+*.egg-info
+.coverage
 .pyc
 .pytest_cache
+.python-version
 __pycache__
+dist/**
 env.json
-*.egg-info
+htmlcov
