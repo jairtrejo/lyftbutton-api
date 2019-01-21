@@ -43,7 +43,7 @@ def local_authorizer(http_event):
     from lyftbutton.authorizer import handler
 
     response = handler(
-        {"methodArn": "false-arn", "authorizationToken": auth_token}
+        {"methodArn": "false-arn", "authorizationToken": auth_token}, None
     )
 
     return {"principalId": response["principalId"], **response["context"]}
