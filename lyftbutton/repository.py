@@ -1,6 +1,5 @@
 import os
 from decimal import Decimal
-from functools import lru_cache
 
 import attr
 import boto3
@@ -17,7 +16,6 @@ else:
     dynamodb = boto3.resource("dynamodb")
 
 
-@lru_cache(maxsize=None)
 def _from_dynamo(*, lyft_id=None, serial_number=None):
     table = dynamodb.Table("LyftButton")
 
