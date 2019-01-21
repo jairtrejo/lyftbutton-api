@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 from time import time
 
 import attr
@@ -41,7 +42,10 @@ class LyftAccount:
     @property
     def token(self):
         return jwt.encode(
-            {"lyft_id": self.id},
+            {
+                "lyft_id": self.id,
+                "exp": datetime.utcnow() + timedelta(hours=1),
+            },
             os.environ.get("TOKEN_SECRET"),
             algorithm="HS256",
         ).decode("utf-8")

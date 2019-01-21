@@ -3,42 +3,77 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: 'Lyft Button API - The API for lyftbutton.com'
 
 Parameters:
-  TOKEN_SECRET:
-    Type: String
+  TokenSecret:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: LyftButtonApiTokenSecret
     Description: Secret key to sign tokens
-  LYFT_CLIENT_ID:
-    Type: String
+  LyftClientId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: LyftButtonApiLyftClientId
     Description: Lyft API Client ID
-  LYFT_CLIENT_SECRET:
-    Type: String
+  LyftClientSecret:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: LyftButtonApiLyftClientSecret
     Description: Lyft API Client Secret
-  GOOGLE_CLIENT_ID:
-    Type: String
-    Description: Lyft API Client ID
-  GOOGLE_CLIENT_SECRET:
-    Type: String
-    Description: Lyft API Client Secret
+  GoogleClientId:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: LyftButtonApiGoogleClientId
+    Description: Google API Client ID
+  GoogleClientSecret:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: LyftButtonApiGoogleClientSecret
+    Description: Google API Client Secret
 
 Globals:
   Function:
     Timeout: 300
-    Environment:
-      Variables:
-        TOKEN_SECRET: !Ref TOKEN_SECRET
-        DYNAMO_ENDPOINT: !Ref DYNAMO_ENDPOINT
-        LYFT_CLIENT_ID: !Ref LYFT_CLIENT_ID
-        LYFT_CLIENT_SECRET: !Ref LYFT_CLIENT_SECRET
-        GOOGLE_CLIENT_ID: !Ref GOOGLE_CLIENT_ID
-        GOOGLE_CLIENT_SECRET: !Ref GOOGLE_CLIENT_SECRET
+    Tags:
+      Site: lyftbutton.com
 
 Resources:
-  ButtonOfLyft:
-    Type: 'AWS::Serverless::SimpleTable'
+  LyftButtonApi:
+    Type: 'AWS::Serverless::Api'
     Properties:
-      TableName: Token
-      PrimaryKey:
-        Name: lyft_id
-        Type: String
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: JWTAuthorizer
+        Authorizers:
+          JWTAuthorizer:
+            FunctionArn: !GetAtt JWTAuthorizeFunction.Arn
+
+  LyftButtonTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: LyftButton
+      AttributeDefinitions:
+        - AttributeName: lyft_id
+          AttributeType: S
+        - AttributeName: serial_number
+          AttributeType: S
+      KeySchema:
+        - AttributeName: lyft_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: serial_number
+          KeySchema:
+            - AttributeName: serial_number
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Site
+          Value: lyftbutton.com
+
+  JWTAuthorizeFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.jwt_authorizer
+      Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
 
   GetLyftAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -46,12 +81,29 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.get_lyft_account
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
+          LYFT_CLIENT_ID: !Ref LyftClientId
+          LYFT_CLIENT_SECRET: !Ref LyftClientSecret
       Events:
+        GetLyftUrl:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref LyftButtonApi
+            Path: /lyft-account/url
+            Method: get
         GetLyftAccount:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
             Path: /lyft-account
             Method: get
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable
 
   CreateLyftAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -59,12 +111,23 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.create_lyft_account
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
+          LYFT_CLIENT_ID: !Ref LyftClientId
+          LYFT_CLIENT_SECRET: !Ref LyftClientSecret
       Events:
         CreateLyftAccount:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: NONE
             Path: /lyft-account
             Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable
 
   GetDashButtonFunction:
     Type: 'AWS::Serverless::Function'
@@ -72,12 +135,19 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.get_dash_button
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
       Events:
         GetDashButton:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
             Path: /dash-button
             Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref LyftButtonTable
 
   EditDashButtonFunction:
     Type: 'AWS::Serverless::Function'
@@ -85,12 +155,19 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.edit_dash_button
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
       Events:
         EditDashButton:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
             Path: /dash-button
             Method: patch
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable
 
   GetGoogleAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -98,12 +175,21 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.get_google_account
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
+          GOOGLE_CLIENT_ID: !Ref GoogleClientId
+          GOOGLE_CLIENT_SECRET: !Ref GoogleClientSecret
       Events:
         GetGoogleAccount:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
             Path: /google-account
             Method: get
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable
 
   SetGoogleAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -111,12 +197,21 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.set_google_account
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
+          GOOGLE_CLIENT_ID: !Ref GoogleClientId
+          GOOGLE_CLIENT_SECRET: !Ref GoogleClientSecret
       Events:
         SetGoogleAccount:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
             Path: /google-account
             Method: post
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable
 
   DeleteGoogleAccountFunction:
     Type: 'AWS::Serverless::Function'
@@ -124,9 +219,16 @@ Resources:
       CodeUri: dist/
       Handler: lyftbutton.delete_google_account
       Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !Ref TokenSecret
       Events:
         DeleteGoogleAccount:
           Type: Api
           Properties:
+            RestApiId: !Ref LyftButtonApi
             Path: /google-account
             Method: delete
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable

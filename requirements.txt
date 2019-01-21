@@ -1,5 +1,5 @@
 attrs==18.2.0
-aws-sam-cli==0.6.0
+aws-sam-cli==0.7.0
 awscli==1.16.33
 black==18.9b0
 boto3==1.9.23

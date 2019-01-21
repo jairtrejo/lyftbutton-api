@@ -3,7 +3,6 @@ import os
 from functools import wraps
 
 import attr
-import jwt
 import structlog
 
 import lyftbutton.logconfig as logconfig
@@ -35,29 +34,19 @@ class Response:
         return response
 
 
-def authorizer(event, context):
+def local_authorizer(http_event):
     """
-    An API Gateway authorizer
-
-    Args:
-        event (dict) The authorization event
-        context (dict) Lambda execution context
-
-    Returns:
-        response (dict) An auth_context dictionary
+    A local simulation of what API Gateway authorizer does
     """
-    TOKEN_SECRET = os.environ.get("TOKEN_SECRET")
-    auth_header = event["headers"].get("Authorization")
+    auth_token = http_event["headers"].get("Authorization", "").split(" ")[-1]
 
-    if auth_header:
-        claims = jwt.decode(
-            auth_header.split(" ")[1], TOKEN_SECRET, algorithm="HS256"
-        )
-        claims["principalId"] = "button"
-    else:
-        claims = {"principalId": "anonymous"}
+    from lyftbutton.authorizer import handler
 
-    return claims
+    response = handler(
+        {"methodArn": "false-arn", "authorizationToken": auth_token}
+    )
+
+    return {"principalId": response["principalId"], **response["context"]}
 
 
 def api_handler(*args, model=None):
@@ -91,7 +80,7 @@ def api_handler(*args, model=None):
 
             # Authorization
             if os.getenv("AWS_SAM_LOCAL"):
-                auth_context = authorizer(event, context)
+                auth_context = local_authorizer(event)
             else:
                 auth_context = event.get("requestContext", {}).get(
                     "authorizer", None
