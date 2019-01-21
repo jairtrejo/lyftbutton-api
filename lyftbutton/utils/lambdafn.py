@@ -136,9 +136,11 @@ def api_handler(*args, model=None):
                     body=json.dumps({"message": "Invalid request parameters"}),
                 )
 
-            except Exception:
-                logger.error("Unexpected error")
-                return Response(status_code=500)
+            except Exception as e:
+                logger.error(
+                    "Unexpected error", args=args, kwargs=kwargs, exc_info=e
+                )
+                response = Response(status_code=500).asdict()
 
             if not response:
                 response = Response(status_code=404)
