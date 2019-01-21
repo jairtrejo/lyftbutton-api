@@ -7,3 +7,4 @@ __pycache__
 dist/**
 env.json
 htmlcov
+packaged-template.yaml
