@@ -30,6 +30,9 @@ Mappings:
 Globals:
   Function:
     Timeout: 300
+    Environment:
+      Variables:
+        DYNAMO_TABLE_NAME: !Ref LyftButtonTable
     Tags:
       Site: lyftbutton.com
 
@@ -47,7 +50,7 @@ Resources:
   LyftButtonTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: LyftButton
+      TableName: !Sub "LyftButton-${Stage}"
       AttributeDefinitions:
         - AttributeName: lyft_id
           AttributeType: S

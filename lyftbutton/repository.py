@@ -12,12 +12,13 @@ LOCAL_DYNAMO_ENDPOINT = "http://docker.for.mac.localhost:8000/"
 
 if os.getenv("AWS_SAM_LOCAL"):
     dynamodb = boto3.resource("dynamodb", endpoint_url=LOCAL_DYNAMO_ENDPOINT)
+    os.environ.setdefault("DYNAMO_TABLE_NAME", "LyftButton")
 else:
     dynamodb = boto3.resource("dynamodb")
 
 
 def _from_dynamo(*, lyft_id=None, serial_number=None):
-    table = dynamodb.Table("LyftButton")
+    table = dynamodb.Table(os.getenv("DYNAMO_TABLE_NAME"))
 
     if not lyft_id:
         items = table.query(
@@ -37,7 +38,7 @@ def _from_dynamo(*, lyft_id=None, serial_number=None):
 
 
 def _to_dynamo(lyft_id, fields):
-    table = dynamodb.Table("LyftButton")
+    table = dynamodb.Table(os.getenv("DYNAMO_TABLE_NAME"))
 
     clauses = ", ".join(
         "{field} = :{field}".format(field=field) for field in fields.keys()
