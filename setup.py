@@ -11,6 +11,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "attrs==18.2",
+        "inflection==0.3.1",
         "google-api-python-client==1.7.4",
         "oauth2client==4.1.3",
         "lyft-rides==0.2",

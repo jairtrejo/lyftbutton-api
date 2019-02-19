@@ -4,6 +4,7 @@ from functools import wraps
 
 import attr
 import structlog
+from inflection import camelize, underscore
 
 import lyftbutton.logconfig as logconfig
 
@@ -92,7 +93,12 @@ def api_handler(*args, model=None):
             # Model
             if model:
                 try:
-                    instance = model(**json.loads(event["body"]))
+                    instance = model(
+                        **{
+                            underscore(k): v
+                            for k, v in json.loads(event["body"]).items()
+                        }
+                    )
                 except TypeError as e:
                     logger.error(
                         "Invalid model",
@@ -146,11 +152,21 @@ def api_handler(*args, model=None):
                 response = Response(status_code=404)
 
             elif isinstance(response, dict):
-                body = json.dumps(response)
+                body = json.dumps(
+                    {
+                        camelize(k, uppercase_first_letter=False): v
+                        for k, v in response.items()
+                    }
+                )
                 response = Response(status_code=200, body=body)
 
             elif not isinstance(response, Response):
-                body = json.dumps(response.asdict())
+                body = json.dumps(
+                    {
+                        camelize(k, uppercase_first_letter=False): v
+                        for k, v in response.asdict().items()
+                    }
+                )
                 response = Response(status_code=200, body=body)
 
             if 200 <= response.status_code < 300:
@@ -161,6 +177,11 @@ def api_handler(*args, model=None):
                 logger.info(
                     "Failure", response=response, status=response.status_code
                 )
+
+            response.headers["Access-Control-Allow-Origin"] = os.getenv(
+                "CORS_DOMAIN"
+            )
+            response.headers["Access-Control-Allow-Headers"] = "Authorization"
 
             return response.asdict()
 

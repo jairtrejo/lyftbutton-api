@@ -60,6 +60,18 @@ class TestApiHandler:
         assert response["statusCode"] == 200
         assert response["body"] == '{"some": "dict"}'
 
+    def test_camelizes_return_value_fields(
+        self, event, context, model_instance
+    ):
+        @api_handler
+        def handler():
+            return model_instance(camel_field="value")
+
+        response = handler(event, context)
+
+        assert response["statusCode"] == 200
+        assert response["body"] == '{"camelField": "value"}'
+
     def test_treats_dictionaries_as_already_serialized(self, event, context):
         @api_handler
         def handler():
@@ -133,6 +145,19 @@ class TestApiHandler:
         response = handler(event, context)
 
         assert response["body"] == "bar"
+
+    def test_accepts_camel_case_field_names(self, event, context):
+        MyModel = attr.make_class("MyModel", ["foo_bar"])
+
+        @api_handler(model=MyModel)
+        def handler(instance):
+            return Response(status_code=200, body=instance.foo_bar)
+
+        event["body"] = json.dumps({"fooBar": "baz"})
+
+        response = handler(event, context)
+
+        assert response["body"] == "baz"
 
     def test_returns_400_for_invalid_model(self, event, context):
         MyModel = attr.make_class("MyModel", ["foo"])
