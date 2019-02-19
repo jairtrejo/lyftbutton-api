@@ -10,6 +10,10 @@ Parameters:
       - Dev
       - Prod
     Default: 'Dev'
+  CorsDomain:
+    Type: String
+    Description: CORS authorized domain for this API
+    Default: '*'
   DomainName:
     Type: String
     Description: Domain name for the API, e.g. api.lyftbutton.com
@@ -47,6 +51,7 @@ Globals:
     Environment:
       Variables:
         DYNAMO_TABLE_NAME: !Ref LyftButtonTable
+        CORS_DOMAIN: !Ref CorsDomain
     Tags:
       Site: lyftbutton.com
 
@@ -55,12 +60,22 @@ Resources:
     Type: 'AWS::Serverless::Api'
     Properties:
       StageName: Prod
+      Cors:
+        AllowOrigin: !Sub "'${CorsDomain}'"
+        AllowHeaders: "'Authorization'"
       Auth:
-        DefaultAuthorizer: JWTAuthorizer
         Authorizers:
           JWTAuthorizer:
             FunctionArn: !GetAtt JWTAuthorizeFunction.Arn
 
+  CorsAuthResponse:
+    Type: 'AWS::ApiGateway::GatewayResponse'
+    Properties:
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !Sub "'${CorsDomain}'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Authorization'"
+      ResponseType: DEFAULT_4XX
+      RestApiId: !Ref LyftButtonApi
 
   APIDomainName:
     Type: 'AWS::ApiGateway::DomainName'
