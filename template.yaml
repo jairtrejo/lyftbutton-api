@@ -154,8 +154,6 @@ Resources:
         GetLyftUrl:
           Type: Api
           Properties:
-            Auth:
-              Authorizer: NONE
             RestApiId: !Ref LyftButtonApi
             Path: /lyft-account/url
             Method: get
@@ -163,6 +161,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
             Path: /lyft-account
             Method: get
       Policies:
@@ -185,8 +185,6 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
-            Auth:
-              Authorizer: NONE
             Path: /lyft-account
             Method: post
       Policies:
@@ -207,6 +205,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
             Path: /dash-button
             Method: get
       Policies:
@@ -227,6 +227,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
             Path: /dash-button
             Method: patch
       Policies:
@@ -249,6 +251,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
             Path: /google-account
             Method: get
       Policies:
@@ -271,6 +275,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
             Path: /google-account
             Method: post
       Policies:
@@ -291,6 +297,8 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
             Path: /google-account
             Method: delete
       Policies:
