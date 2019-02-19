@@ -10,6 +10,18 @@ Parameters:
       - Dev
       - Prod
     Default: 'Dev'
+  DomainName:
+    Type: String
+    Description: Domain name for the API, e.g. api.lyftbutton.com
+    Default: ''
+  SSLCertificateArn:
+    Type: String
+    Description: Arn for an SSL certificate that covers the domain
+    Default: ''
+  HostedZoneId:
+    Type: String
+    Description: HostedZone to create record for the domain
+    Default: ''
 
 Mappings:
   SecretsMap:
@@ -26,6 +38,8 @@ Mappings:
       GoogleClientId: '{{resolve:ssm:/LyftButton/Prod/GoogleClientId:1}}'
       GoogleClientSecret: '{{resolve:ssm:/LyftButton/Prod/GoogleClientSecret:1}}'
 
+Conditions:
+  ShouldMapDomain: !Not [ !Equals [ !Ref DomainName, "" ]]
 
 Globals:
   Function:
@@ -46,6 +60,35 @@ Resources:
         Authorizers:
           JWTAuthorizer:
             FunctionArn: !GetAtt JWTAuthorizeFunction.Arn
+
+
+  APIDomainName:
+    Type: 'AWS::ApiGateway::DomainName'
+    Condition: ShouldMapDomain
+    Properties:
+      CertificateArn: !Ref SSLCertificateArn
+      DomainName: !Ref DomainName
+
+  APIRedirectRecord:
+    Type: 'AWS::Route53::RecordSet'
+    Condition: ShouldMapDomain
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: api.lyftbutton.com
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt APIDomainName.DistributionHostedZoneId
+        DNSName: !GetAtt APIDomainName.DistributionDomainName
+
+  APIBasePathMapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    Condition: ShouldMapDomain
+    DependsOn:
+      - LyftButtonApiProdStage
+    Properties:
+      DomainName: !Ref DomainName
+      RestApiId: !Ref LyftButtonApi
+      Stage: !Ref LyftButtonApi.Stage
 
   LyftButtonTable:
     Type: 'AWS::DynamoDB::Table'
@@ -238,3 +281,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref LyftButtonTable
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint"
+    Value: !Sub "https://${LyftButtonApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
