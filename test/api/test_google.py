@@ -2,6 +2,7 @@ import json
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import oauth2client.client
+import pytest
 
 from lyftbutton.api import (
     delete_google_account,
@@ -10,6 +11,7 @@ from lyftbutton.api import (
 )
 
 
+@pytest.mark.usefixtures("environment")
 class TestGetGoogleAccount:
     def test_get_unauthenticated(self):
         response = get_google_account.__wrapped__()
@@ -40,6 +42,7 @@ class TestGetGoogleAccount:
         assert response.calendar == "My Calendar"
 
 
+@pytest.mark.usefixtures("environment")
 class TestSetGoogleAccount:
     @patch("lyftbutton.api.google.LyftButton")
     def test_set_account(self, MockLyftButton):

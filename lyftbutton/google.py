@@ -22,7 +22,7 @@ def _get_auth_flow():
         client_id=os.environ.get("GOOGLE_CLIENT_ID"),
         client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
         scope="https://www.googleapis.com/auth/calendar.readonly",
-        redirect_uri="https://lyftbutton.com/google",
+        redirect_uri=os.getenv("CORS_DOMAIN"),
         prompt="consent",
     )
 
