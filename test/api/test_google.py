@@ -72,6 +72,19 @@ class TestDeleteGoogleAccount:
     @patch("lyftbutton.api.google.LyftButton")
     def test_delete_account(self, MockLyftButton):
         button = MockLyftButton.find.return_value
+        button.google_account.calendar = "My Calendar"
+
+        response = delete_google_account.__wrapped__(
+            auth_context={"lyft_id": "lyft:123"}
+        )
+
+        assert response.status_code == 204
+        assert button.google_account is None
+
+    @patch("lyftbutton.api.google.LyftButton")
+    def test_delete_account_no_account(self, MockLyftButton):
+        button = MockLyftButton.find.return_value
+        button.google_account = None
 
         response = delete_google_account.__wrapped__(
             auth_context={"lyft_id": "lyft:123"}
