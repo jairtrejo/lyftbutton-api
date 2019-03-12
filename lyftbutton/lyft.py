@@ -65,9 +65,14 @@ class LyftAccount:
 
         client.refresh_oauth_credential()
 
+        profile = client.get_user_profile().json
+
         return cls(
-            **client.get_user_profile().json,
-            credentials=_credentials_to_dict(client.session.oauth2credential)
+            id=profile["id"],
+            first_name=profile["first_name"],
+            last_name=profile["last_name"],
+            has_taken_a_ride=profile["has_taken_a_ride"],
+            credentials=_credentials_to_dict(client.session.oauth2credential),
         )
 
     def asdict(self):
