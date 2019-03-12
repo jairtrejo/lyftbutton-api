@@ -75,12 +75,12 @@ class TestEditDashButton:
         )
 
         response = edit_dash_button.__wrapped__(
-            DashButton(home=Location(lat=120, lng=90)),
+            DashButton(home=Location(name="23 Aloha St", lat=120, lng=90)),
             auth_context={"lyft_id": "lyft:123"},
         )
 
         assert response.serial_number == "button:123"
-        assert response.home == Location(lat=120, lng=90)
+        assert response.home == Location(name="23 Aloha St", lat=120, lng=90)
 
 
 class TestDeleteDashButton:

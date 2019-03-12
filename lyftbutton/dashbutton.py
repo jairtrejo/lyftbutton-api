@@ -20,6 +20,7 @@ class Location:
 
     lat = attr.ib(converter=float)
     lng = attr.ib(converter=float)
+    name = attr.ib(converter=str, default="Unknown")
 
 
 @attr.s
