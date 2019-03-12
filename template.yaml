@@ -235,6 +235,28 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref LyftButtonTable
 
+  DeleteDashButtonFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dist/
+      Handler: lyftbutton.delete_dash_button
+      Runtime: python3.6
+      Environment:
+        Variables:
+          TOKEN_SECRET: !FindInMap [SecretsMap, !Ref Stage, 'TokenSecret']
+      Events:
+        DeleteDashButton:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyftButtonApi
+            Auth:
+              Authorizer: JWTAuthorizer
+            Path: /dash-button
+            Method: delete
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LyftButtonTable
+
   GetGoogleAccountFunction:
     Type: 'AWS::Serverless::Function'
     Properties:

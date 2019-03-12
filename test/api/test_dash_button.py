@@ -1,6 +1,10 @@
 from unittest.mock import patch
 
-from lyftbutton.api import edit_dash_button, get_dash_button
+from lyftbutton.api import (
+    delete_dash_button,
+    edit_dash_button,
+    get_dash_button,
+)
 from lyftbutton.dashbutton import DashButton, Location
 
 
@@ -77,3 +81,28 @@ class TestEditDashButton:
 
         assert response.serial_number == "button:123"
         assert response.home == Location(lat=120, lng=90)
+
+
+class TestDeleteDashButton:
+    @patch("lyftbutton.api.dashbutton.LyftButton")
+    def test_delete_button(self, MockLyftButton):
+        lyft_button = MockLyftButton.find.return_value
+
+        response = delete_dash_button.__wrapped__(
+            auth_context={"lyft_id": "lyft:123"}
+        )
+
+        assert response.status_code == 204
+        assert lyft_button.dash_button is None
+
+    @patch("lyftbutton.api.dashbutton.LyftButton")
+    def test_delete_button_no_button(self, MockLyftButton):
+        lyft_button = MockLyftButton.find.return_value
+        lyft_button.dash_button = None
+
+        response = delete_dash_button.__wrapped__(
+            auth_context={"lyft_id": "lyft:123"}
+        )
+
+        assert response.status_code == 204
+        assert lyft_button.dash_button is None

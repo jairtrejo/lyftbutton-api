@@ -32,3 +32,15 @@ def edit_dash_button(new_button, auth_context=None):
     lyft_button.dash_button = button
 
     return button
+
+
+@api_handler
+def delete_dash_button(auth_context=None):
+    if not auth_context:
+        return Response(status_code=403)
+
+    lyft_button = LyftButton.find(lyft_id=auth_context["lyft_id"])
+
+    lyft_button.dash_button = None
+
+    return Response(status_code=204)

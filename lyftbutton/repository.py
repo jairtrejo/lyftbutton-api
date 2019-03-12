@@ -114,16 +114,19 @@ class LyftButton:
         )
 
     def _set_dash_button(self, dash_button):
-        button_data = dash_button.asdict()
+        if dash_button is None:
+            button_data = None
+        else:
+            button_data = dash_button.asdict()
 
-        for field in ("home", "destination"):
-            if button_data[field]:
-                button_data[field]["lat"] = Decimal(
-                    "%.6f" % button_data[field]["lat"]
-                )
-                button_data[field]["lng"] = Decimal(
-                    "%.6f" % button_data[field]["lng"]
-                )
+            for field in ("home", "destination"):
+                if button_data[field]:
+                    button_data[field]["lat"] = Decimal(
+                        "%.6f" % button_data[field]["lat"]
+                    )
+                    button_data[field]["lng"] = Decimal(
+                        "%.6f" % button_data[field]["lng"]
+                    )
 
         _to_dynamo(self.lyft_id, {"dash_button": button_data})
 
