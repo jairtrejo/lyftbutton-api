@@ -18,5 +18,6 @@ setup(
         "PyJWT>=1.6.4",
         "structlog>=18.2.0",
     ],
+    extras_require={"dev": ["colorama>=0.4.1"]},
     zip_safe=False,
 )
